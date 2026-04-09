@@ -167,9 +167,7 @@ Future<void> showShareProviderSheet(
                         label: l10n.shareProviderSheetShareButton,
                         onTap: () async {
                           final rect = shareAnchorRect(ctx);
-                          await SharePlus.instance.share(
-                            ShareParams(text: code, sharePositionOrigin: rect),
-                          );
+                          await Share.share(code, sharePositionOrigin: rect);
                         },
                       ),
                     ),

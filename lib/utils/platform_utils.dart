@@ -1,7 +1,7 @@
 import 'dart:io' show Platform, exit;
 
 import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, TargetPlatform;
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:restart_app/restart_app.dart';
 
 abstract final class PlatformUtils {
@@ -10,7 +10,10 @@ abstract final class PlatformUtils {
   static bool get isDesktop =>
       Platform.isMacOS || Platform.isWindows || Platform.isLinux;
 
-  static bool get isMobile => Platform.isAndroid || Platform.isIOS;
+  static bool get isOhos =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.ohos;
+
+  static bool get isMobile => Platform.isAndroid || Platform.isIOS || isOhos;
 
   static bool get isDesktopTarget =>
       defaultTargetPlatform == TargetPlatform.macOS ||
@@ -19,7 +22,8 @@ abstract final class PlatformUtils {
 
   static bool get isMobileTarget =>
       defaultTargetPlatform == TargetPlatform.android ||
-      defaultTargetPlatform == TargetPlatform.iOS;
+      defaultTargetPlatform == TargetPlatform.iOS ||
+      defaultTargetPlatform == TargetPlatform.ohos;
 
   static bool get isMacOS => Platform.isMacOS;
 

@@ -1540,14 +1540,12 @@ Future<void> _showMultiExportSheet(
                       label: l10n.providersPageExportShareButton,
                       onTap: () async {
                         final rect = shareAnchorRect(ctx);
-                        await SharePlus.instance.share(
-                          ShareParams(
-                            text: text,
-                            subject: l10n.providersPageExportSelectedTitle(
-                              keys.length,
-                            ),
-                            sharePositionOrigin: rect,
+                        await Share.share(
+                          text,
+                          subject: l10n.providersPageExportSelectedTitle(
+                            keys.length,
                           ),
+                          sharePositionOrigin: rect,
                         );
                       },
                     ),

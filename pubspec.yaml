@@ -45,7 +45,8 @@ dependencies:
   provider: ^6.0.5
   dynamic_color: ^1.8.1
   lucide_icons_flutter: ^3.1.11
-  shared_preferences: ^2.2.3
+  shared_preferences:
+    path: ../flutter_packages_ohos/packages/shared_preferences/shared_preferences
   image_picker: 1.1.2
   flutter_svg: ^2.2.1
   http: ^1.5.0
@@ -58,19 +59,21 @@ dependencies:
   flutter_slidable: ^3.0.1
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  url_launcher: ^6.3.2
+  url_launcher:
+    path: ../flutter_packages_ohos/packages/url_launcher/url_launcher
   package_info_plus: ^8.3.1
   gpt_markdown: ^1.1.4
   uuid: ^4.5.0
   intl: ^0.20.2
-  path: ^1.9.1
+  path: ^1.9.0
   path_provider: ^2.1.4
   file_picker: ^10.3.10
   archive: ^4.0.9
   xml: ^6.5.0
   open_filex: ^4.5.0
   easy_image_viewer: ^1.4.6
-  share_plus: ^11.1.0
+  share_plus:
+    path: ../flutter_plus_plugins_ohos/packages/share_plus/share_plus
   pretty_qr_code: ^3.5.0
   mobile_scanner: ^7.0.1
   mcp_client: # ^1.0.2
@@ -87,7 +90,8 @@ dependencies:
   flutter_animate: ^4.5.2
   webview_flutter: ^4.7.0
   webview_windows: ^0.4.0
-  flutter_math_fork: ^0.7.4
+  flutter_math_fork:
+    path: ./dependencies/flutter_math_fork
   scrollable_positioned_list: ^0.3.8
   scrollview_observer: ^1.26.0
   image_gallery_saver_plus: ^4.0.1
@@ -122,9 +126,21 @@ dev_dependencies:
   flutter_lints: ^5.0.0
 
 dependency_overrides:
+  flutter_math_fork:
+    path: ./dependencies/flutter_math_fork
+
+  syncfusion_flutter_sliders:
+    path: ./dependencies/syncfusion_flutter_sliders
+
   # Prevent the location from being accessed continuously on Windows
   permission_handler_windows:
     path: ./dependencies/flutter-permission-handler/permission_handler_windows
+
+  path_provider:
+    path: ../flutter_packages_ohos/packages/path_provider/path_provider
+
+  share_plus_platform_interface:
+    path: ../flutter_plus_plugins_ohos/packages/share_plus/share_plus_platform_interface
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

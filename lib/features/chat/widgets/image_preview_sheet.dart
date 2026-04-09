@@ -79,13 +79,9 @@ class _ImagePreviewDesktopDialogState
         ? widget.file.uri.pathSegments.last
         : 'image.png';
     try {
-      final result = await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(widget.file.path, mimeType: 'image/png')],
-          fileNameOverrides: [filename],
-          sharePositionOrigin: _shareAnchorRect(anchorContext),
-        ),
-      );
+      final result = await Share.shareXFiles([
+        XFile(widget.file.path, mimeType: 'image/png', name: filename),
+      ], sharePositionOrigin: _shareAnchorRect(anchorContext));
       if (!mounted) return;
       if (result.status == ShareResultStatus.success) {
         Navigator.of(context).maybePop();
@@ -474,13 +470,9 @@ class _ImagePreviewSheetState extends State<_ImagePreviewSheet> {
         ? widget.file.uri.pathSegments.last
         : 'image.png';
     try {
-      final result = await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(widget.file.path, mimeType: 'image/png')],
-          fileNameOverrides: [filename],
-          sharePositionOrigin: _shareAnchorRect(anchorContext),
-        ),
-      );
+      final result = await Share.shareXFiles([
+        XFile(widget.file.path, mimeType: 'image/png', name: filename),
+      ], sharePositionOrigin: _shareAnchorRect(anchorContext));
       if (!mounted) return;
       // Close only if sharing succeeds (when the platform reports it)
       if (result.status == ShareResultStatus.success) {

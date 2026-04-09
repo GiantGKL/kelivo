@@ -7,14 +7,14 @@ import 'package:path_provider/path_provider.dart';
 ///
 /// - Windows/macOS/Linux: use the Application Support (app data) directory
 ///   provided by `path_provider`.
-/// - Android/iOS: keep using the Application Documents directory.
+/// - Android/iOS/OpenHarmony: keep using the Application Documents directory.
 class AppDirectories {
   AppDirectories._();
 
   /// Gets the root directory for application data storage.
   ///
   /// - Windows/macOS/Linux: Application Support directory
-  /// - Android/iOS: Application Documents directory
+  /// - Android/iOS/OpenHarmony: Application Documents directory
   static Future<Directory> getAppDataDirectory() async {
     switch (defaultTargetPlatform) {
       case TargetPlatform.windows:
@@ -23,6 +23,7 @@ class AppDirectories {
         return await getApplicationSupportDirectory();
       case TargetPlatform.android:
       case TargetPlatform.iOS:
+      case TargetPlatform.ohos:
       case TargetPlatform.fuchsia:
         return await getApplicationDocumentsDirectory();
     }

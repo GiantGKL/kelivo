@@ -353,9 +353,7 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         } else {
           if (!mounted) return;
           // fallback to sharing url as text
-          await SharePlus.instance.share(
-            ShareParams(text: src, sharePositionOrigin: anchor),
-          );
+          await Share.share(src, sharePositionOrigin: anchor);
           return;
         }
       } else {
@@ -375,9 +373,9 @@ class _ImageViewerPageState extends State<ImageViewerPage>
         return;
       }
       try {
-        await SharePlus.instance.share(
-          ShareParams(files: [XFile(pathToSave)], sharePositionOrigin: anchor),
-        );
+        await Share.shareXFiles([
+          XFile(pathToSave),
+        ], sharePositionOrigin: anchor);
       } on MissingPluginException catch (_) {
         // Fallback: open system chooser by opening file
         final res = await OpenFilex.open(pathToSave);
