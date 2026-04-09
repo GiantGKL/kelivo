@@ -2,7 +2,7 @@
   <img src="assets/app_icon.png" alt="Kelivo Icon" width="100" />
   <h1>Kelivo</h1>
 
-一个 Flutter LLM 聊天客户端
+一个已移植到 OpenHarmony 的 Flutter LLM 聊天客户端
 
   <a href="https://discord.gg/Tb8DyvvV5T" target="_blank">
     <img src="https://img.shields.io/badge/Join%20our%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Join Discord"/>
@@ -59,7 +59,13 @@
 
 - ✅ Android
 - ✅ iOS
-- ✅ Harmony ([kelivo-ohos](https://github.com/Chevey339/kelivo-ohos))
+- ✅ HarmonyOS / OpenHarmony（已直接移植到当前仓库）
+
+## OpenHarmony 移植说明
+
+- 当前仓库已经直接包含 OpenHarmony 工程，位于 `ohos/`。
+- 使用 Flutter OpenHarmony SDK 即可从当前仓库构建 `.hap` 安装包。
+- 本地打包前，请先在 DevEco Studio 中为 `ohos/` 工程配置调试签名。
 - ✅ Windows
 - ✅ macOS
 - ✅ Linux

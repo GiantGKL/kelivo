@@ -2,7 +2,7 @@
   <img src="assets/app_icon.png" alt="Kelivo Icon" width="100" />
   <h1>Kelivo</h1>
 
-A Flutter LLM Chat Client
+A Flutter LLM Chat Client with OpenHarmony Port
 
   <a href="https://discord.gg/Tb8DyvvV5T" target="_blank">
     <img src="https://img.shields.io/badge/Join%20our%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Join Discord"/>
@@ -59,7 +59,13 @@ Thanks to [siliconflow.cn](https://siliconflow.cn) for providing free models in 
 
 - ✅ Android
 - ✅ iOS
-- ✅ Harmony ([kelivo-ohos](https://github.com/Chevey339/kelivo-ohos))
+- ✅ HarmonyOS / OpenHarmony (ported in this repository)
+
+## OpenHarmony Port
+
+- This repository now includes the OpenHarmony port directly under `ohos/`.
+- Use the Flutter OpenHarmony SDK to build a `.hap` package from this repo.
+- Before local packaging, configure a debug signing profile in DevEco Studio for the `ohos/` project.
 - ✅ Windows
 - ✅ macOS
 - ✅ Linux
