@@ -4,7 +4,7 @@
 
 ## 原仓库
 
-- 原项目地址：`https://github.com/Chevey339/kelivo`
+- 原项目地址：[Chevey339/kelivo](https://github.com/Chevey339/kelivo)
 
 ## 说明
 
