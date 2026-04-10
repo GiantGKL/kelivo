@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../icons/lucide_adapter.dart';
@@ -13,6 +12,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/ios_switch.dart';
 import '../../../shared/widgets/snackbar.dart';
 import '../../../core/services/haptics.dart';
+import '../../../utils/url_launcher_ext.dart';
 import 'log_viewer_page.dart';
 
 class AboutPage extends StatefulWidget {
@@ -60,10 +60,7 @@ class _AboutPageState extends State<AboutPage> {
 
   Future<void> _openUrl(String url) async {
     final uri = Uri.parse(url);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      // Fallback: try in-app web view
-      await launchUrl(uri, mode: LaunchMode.platformDefault);
-    }
+    await launchBrowserUrl(uri);
   }
 
   void _onVersionTap() {
@@ -652,9 +649,7 @@ class _AboutPageState extends State<AboutPage> {
                 label: l10n.aboutPageWebsite,
                 onTap: () async {
                   final uri = Uri.parse('https://kelivo.psycheas.top/');
-                  if (!await launchUrl(uri, mode: LaunchMode.platformDefault)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  }
+                  await launchBrowserUrl(uri);
                 },
               ),
               _iosDivider(context),

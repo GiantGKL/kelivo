@@ -22,7 +22,6 @@ import 'package:flutter/services.dart';
 import 'dart:io' show File;
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/snackbar.dart';
@@ -41,6 +40,7 @@ import '../../assistant/widgets/assistant_select_sheet.dart';
 import '../../../desktop/hotkeys/sidebar_tab_bus.dart';
 import 'dart:async';
 import '../../../features/search/services/global_session_search_service.dart';
+import '../../../utils/url_launcher_ext.dart';
 import 'assistant_avatar.dart';
 import 'assistant_entry_actions.dart';
 
@@ -3166,8 +3166,7 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
                   onTap: () async {
                     final uri = Uri.parse(url);
                     try {
-                      // ignore: deprecated_member_use
-                      await launchUrl(uri);
+                      await launchBrowserUrl(uri);
                     } catch (_) {
                       Clipboard.setData(ClipboardData(text: url));
                       if (!context.mounted) return;

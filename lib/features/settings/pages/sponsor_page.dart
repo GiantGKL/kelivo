@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/providers/settings_provider.dart';
 import 'package:http/http.dart' as http;
-import 'package:url_launcher/url_launcher.dart';
 import '../../../icons/lucide_adapter.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/services/haptics.dart';
+import '../../../utils/url_launcher_ext.dart';
 
 class SponsorPage extends StatefulWidget {
   const SponsorPage({super.key});
@@ -101,9 +101,7 @@ class _SponsorPageState extends State<SponsorPage> {
                 label: l10n.sponsorPageAfdianTitle,
                 onTap: () async {
                   final uri = Uri.parse('https://afdian.com/a/kelivo');
-                  if (!await launchUrl(uri, mode: LaunchMode.platformDefault)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  }
+                  await launchBrowserUrl(uri);
                 },
               ),
               _iosDivider(context),
@@ -113,9 +111,7 @@ class _SponsorPageState extends State<SponsorPage> {
                 label: l10n.sponsorPageWeChatTitle,
                 onTap: () async {
                   final uri = Uri.parse(wechatQrUrl);
-                  if (!await launchUrl(uri, mode: LaunchMode.platformDefault)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  }
+                  await launchBrowserUrl(uri);
                 },
               ),
             ],

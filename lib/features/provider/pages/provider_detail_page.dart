@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../utils/brand_assets.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
 import '../../../core/providers/settings_provider.dart';
@@ -30,6 +29,7 @@ import 'provider_network_page.dart';
 import '../../../core/services/haptics.dart';
 import '../../provider/widgets/provider_avatar.dart';
 import '../../../utils/model_grouping.dart';
+import '../../../utils/url_launcher_ext.dart';
 
 class ProviderDetailPage extends StatefulWidget {
   const ProviderDetailPage({
@@ -539,17 +539,7 @@ class _ProviderDetailPageState extends State<ProviderDetailPage> {
                     recognizer: TapGestureRecognizer()
                       ..onTap = () async {
                         final uri = Uri.parse('https://pollinations.ai');
-                        try {
-                          final ok = await launchUrl(
-                            uri,
-                            mode: LaunchMode.externalApplication,
-                          );
-                          if (!ok) {
-                            await launchUrl(uri);
-                          }
-                        } catch (_) {
-                          await launchUrl(uri);
-                        }
+                        await launchBrowserUrl(uri);
                       },
                   ),
                 ],
@@ -592,17 +582,7 @@ class _ProviderDetailPageState extends State<ProviderDetailPage> {
                             final uri = Uri.parse(
                               'https://dashboard.x-aio.com',
                             );
-                            try {
-                              final ok = await launchUrl(
-                                uri,
-                                mode: LaunchMode.externalApplication,
-                              );
-                              if (!ok) {
-                                await launchUrl(uri);
-                              }
-                            } catch (_) {
-                              await launchUrl(uri);
-                            }
+                            await launchBrowserUrl(uri);
                           },
                       ),
                     ],
@@ -645,17 +625,7 @@ class _ProviderDetailPageState extends State<ProviderDetailPage> {
                         recognizer: TapGestureRecognizer()
                           ..onTap = () async {
                             final uri = Uri.parse('https://siliconflow.cn');
-                            try {
-                              final ok = await launchUrl(
-                                uri,
-                                mode: LaunchMode.externalApplication,
-                              );
-                              if (!ok) {
-                                await launchUrl(uri);
-                              }
-                            } catch (_) {
-                              await launchUrl(uri);
-                            }
+                            await launchBrowserUrl(uri);
                           },
                       ),
                     ],

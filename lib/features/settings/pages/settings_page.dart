@@ -20,8 +20,8 @@ import '../../world_book/pages/world_book_page.dart';
 import 'network_proxy_page.dart';
 import 'storage_space_page.dart';
 import '../../../core/services/storage/storage_usage_service.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../core/services/haptics.dart';
+import '../../../utils/url_launcher_ext.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -345,9 +345,7 @@ class SettingsPage extends StatelessWidget {
                 label: l10n.settingsPageDocs,
                 onTap: () async {
                   final uri = Uri.parse('https://kelivo.psycheas.top/');
-                  if (!await launchUrl(uri, mode: LaunchMode.platformDefault)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  }
+                  await launchBrowserUrl(uri);
                 },
               ),
               if (settings.requestLogEnabled || settings.flutterLogEnabled) ...[
