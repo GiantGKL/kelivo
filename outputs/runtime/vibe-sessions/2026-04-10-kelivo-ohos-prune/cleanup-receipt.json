@@ -1,0 +1,22 @@
+{
+  "stage": "phase_cleanup",
+  "workspace": "E:/1projects/kelivo",
+  "kept_artifacts": [
+    "docs/requirements/2026-04-10-kelivo-ohos-repo-prune.md",
+    "docs/plans/2026-04-10-kelivo-ohos-repo-prune-execution-plan.md",
+    "outputs/runtime/vibe-sessions/2026-04-10-kelivo-ohos-prune/*",
+    "ohos/"
+  ],
+  "removed_surfaces": [
+    "android/",
+    "ios/",
+    "linux/",
+    "macos/",
+    "web/",
+    "windows/",
+    ".github/workflows/*.yml"
+  ],
+  "intentionally_uncommitted": [
+    ".metadata"
+  ]
+}
