@@ -21,7 +21,7 @@ class Haptics {
     if (!enabled) return;
     if (_isIOS) {
       _safe(() => hfp.Haptics.vibrate(hfp.HapticsType.light));
-    } else if (_isAndroid) {
+    } else if (_isAndroid || _isOhos) {
       _safe(() => system.HapticFeedback.lightImpact());
     }
   }
@@ -31,7 +31,7 @@ class Haptics {
     if (!enabled) return;
     if (_isIOS) {
       _safe(() => hfp.Haptics.vibrate(hfp.HapticsType.medium));
-    } else if (_isAndroid) {
+    } else if (_isAndroid || _isOhos) {
       _safe(() => system.HapticFeedback.mediumImpact());
     }
   }
@@ -40,7 +40,7 @@ class Haptics {
     if (!enabled) return;
     if (_isIOS) {
       _safe(() => hfp.Haptics.vibrate(hfp.HapticsType.soft));
-    } else if (_isAndroid) {
+    } else if (_isAndroid || _isOhos) {
       // Closest built-in equivalent to a very gentle tap
       _safe(() => system.HapticFeedback.selectionClick());
     }
@@ -51,7 +51,7 @@ class Haptics {
     if (!enabled) return;
     if (_isIOS) {
       _safe(() => hfp.Haptics.vibrate(hfp.HapticsType.soft));
-    } else if (_isAndroid) {
+    } else if (_isAndroid || _isOhos) {
       _safe(() => system.HapticFeedback.selectionClick());
     }
   }
@@ -77,4 +77,6 @@ class Haptics {
       !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
   static bool get _isAndroid =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+  static bool get _isOhos =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.ohos;
 }

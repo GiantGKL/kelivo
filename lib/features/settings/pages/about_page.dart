@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter/services.dart';
 
 import '../../../icons/lucide_adapter.dart';
 import 'package:haptic_feedback/haptic_feedback.dart' as hf;
@@ -23,6 +24,9 @@ class AboutPage extends StatefulWidget {
 }
 
 class _AboutPageState extends State<AboutPage> {
+  static const MethodChannel _systemInfoChannel = MethodChannel(
+    'kelivo/system_info',
+  );
   String _version = '';
   String _buildNumber = '';
   String _systemInfo = '';
@@ -36,26 +40,79 @@ class _AboutPageState extends State<AboutPage> {
   }
 
   Future<void> _loadInfo() async {
-    final pkg = await PackageInfo.fromPlatform();
-    String sys;
-    if (Platform.isAndroid) {
-      sys = 'Android';
-    } else if (Platform.isIOS) {
-      sys = 'iOS';
-    } else if (Platform.isMacOS) {
-      sys = 'macOS';
-    } else if (Platform.isWindows) {
-      sys = 'Windows';
-    } else if (Platform.isLinux) {
-      sys = 'Linux';
-    } else {
-      sys = Platform.operatingSystem;
-    }
+    final sys = await _resolveSystemInfo();
+
+    var version = '';
+    var buildNumber = '';
+    try {
+      final pkg = await PackageInfo.fromPlatform();
+      version = pkg.version;
+      buildNumber = pkg.buildNumber;
+    } catch (_) {}
+
+    if (!mounted) return;
     setState(() {
-      _version = pkg.version;
-      _buildNumber = pkg.buildNumber;
+      _version = version;
+      _buildNumber = buildNumber;
       _systemInfo = sys;
     });
+  }
+
+  Future<String> _resolveSystemInfo() async {
+    if (Platform.isOhos) {
+      try {
+        final info = await _systemInfoChannel.invokeMapMethod<String, dynamic>(
+          'getSystemInfo',
+        );
+        final osName = _normalizeOhosName(
+          (info?['distributionOSName'] as String?)?.trim(),
+        );
+        final displayVersion = _normalizeOhosVersion(
+          (info?['displayVersion'] as String?)?.trim(),
+        );
+        if ((osName != null && osName.isNotEmpty) &&
+            (displayVersion != null && displayVersion.isNotEmpty)) {
+          return '$osName $displayVersion';
+        }
+        if (displayVersion != null && displayVersion.isNotEmpty) {
+          return 'HarmonyOS $displayVersion';
+        }
+        if (osName != null && osName.isNotEmpty) {
+          return osName;
+        }
+        final major = info?['majorVersion'];
+        final senior = info?['seniorVersion'];
+        final feature = info?['featureVersion'];
+        if (major != null && senior != null && feature != null) {
+          return 'HarmonyOS $major.$senior.$feature';
+        }
+      } catch (_) {}
+      return 'HarmonyOS';
+    }
+
+    if (Platform.isAndroid) return 'Android';
+    if (Platform.isIOS) return 'iOS';
+    if (Platform.isMacOS) return 'macOS';
+    if (Platform.isWindows) return 'Windows';
+    if (Platform.isLinux) return 'Linux';
+    return Platform.operatingSystem;
+  }
+
+  String? _normalizeOhosName(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    if (raw.contains('HarmonyOS')) return 'HarmonyOS';
+    if (raw.contains('OpenHarmony')) return 'OpenHarmony';
+    return raw;
+  }
+
+  String? _normalizeOhosVersion(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    final noSuffix = raw.replaceFirst(RegExp(r'\(.*$'), '').trim();
+    final match = RegExp(r'\d+\.\d+\.\d+(?:\.\d+)?').firstMatch(noSuffix);
+    if (match != null) {
+      return match.group(0);
+    }
+    return noSuffix.isEmpty ? null : noSuffix;
   }
 
   Future<void> _openUrl(String url) async {
