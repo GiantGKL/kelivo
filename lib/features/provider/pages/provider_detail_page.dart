@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter/services.dart';
 import '../../../utils/brand_assets.dart';
 import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
@@ -401,7 +402,21 @@ class _ProviderDetailPageState extends State<ProviderDetailPage> {
                             img.path,
                           );
                         }
-                      } catch (_) {}
+                      } on PlatformException {
+                        if (!context.mounted) return;
+                        showAppSnackBar(
+                          context,
+                          message: l10n.sideDrawerGalleryOpenError,
+                          type: NotificationType.error,
+                        );
+                      } catch (_) {
+                        if (!context.mounted) return;
+                        showAppSnackBar(
+                          context,
+                          message: l10n.sideDrawerGeneralImageError,
+                          type: NotificationType.error,
+                        );
+                      }
                     }),
                     row(l10n.sideDrawerEnterLink, () async {
                       await _inputProviderAvatarUrl();

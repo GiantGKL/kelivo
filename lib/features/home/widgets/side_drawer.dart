@@ -2853,7 +2853,6 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
         return;
       }
     } on PlatformException {
-      // Gracefully degrade when plugin channel isn't available or permission denied.
       if (!context.mounted) return;
       final l10n = AppLocalizations.of(context)!;
       showAppSnackBar(
@@ -2861,7 +2860,6 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
         message: l10n.sideDrawerGalleryOpenError,
         type: NotificationType.error,
       );
-      await _inputAvatarUrl(context);
       return;
     } catch (_) {
       if (!context.mounted) return;
@@ -2871,7 +2869,6 @@ class _SideDrawerState extends State<SideDrawer> with TickerProviderStateMixin {
         message: l10n.sideDrawerGeneralImageError,
         type: NotificationType.error,
       );
-      await _inputAvatarUrl(context);
       return;
     }
   }

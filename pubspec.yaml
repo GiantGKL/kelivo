@@ -47,7 +47,8 @@ dependencies:
   lucide_icons_flutter: ^3.1.11
   shared_preferences:
     path: ../flutter_packages_ohos/packages/shared_preferences/shared_preferences
-  image_picker: 1.1.2
+  image_picker:
+    path: ../flutter_packages_ohos/packages/image_picker/image_picker
   flutter_svg: ^2.2.1
   http: ^1.5.0
   crypto: ^3.0.3
@@ -142,6 +143,9 @@ dependency_overrides:
 
   share_plus_platform_interface:
     path: ../flutter_plus_plugins_ohos/packages/share_plus/share_plus_platform_interface
+
+  image_picker_ohos:
+    path: ../flutter_packages_ohos/packages/image_picker/image_picker_ohos
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
