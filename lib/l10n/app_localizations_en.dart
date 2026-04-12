@@ -1273,6 +1273,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupPageExportToFileSubtitle => 'Export app data to a file';
 
   @override
+  String get backupPageExportFailed => 'Export failed';
+
+  @override
+  String get backupPageExportSuccess => 'Export completed';
+
+  @override
   String get backupPageImportBackupFile => 'Import Backup File';
 
   @override
@@ -3416,6 +3422,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fontPickerFilterHint => 'Filter fonts...';
+
+  @override
+  String get fontPickerLocalFileOpenError =>
+      'Unable to open the local font file picker.';
 
   @override
   String get desktopFontLoading => 'Loading fonts…';

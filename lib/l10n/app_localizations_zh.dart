@@ -1238,6 +1238,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backupPageExportToFileSubtitle => '导出APP数据为文件';
 
   @override
+  String get backupPageExportFailed => '导出失败';
+
+  @override
+  String get backupPageExportSuccess => '导出完成';
+
+  @override
   String get backupPageImportBackupFile => '备份文件导入';
 
   @override
@@ -3284,6 +3290,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get fontPickerFilterHint => '输入以过滤字体…';
+
+  @override
+  String get fontPickerLocalFileOpenError => '无法打开本地字体文件选择器。';
 
   @override
   String get desktopFontLoading => '正在加载字体…';
@@ -5503,6 +5512,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get backupPageExportToFileSubtitle => '导出APP数据为文件';
 
   @override
+  String get backupPageExportFailed => '导出失败';
+
+  @override
+  String get backupPageExportSuccess => '导出完成';
+
+  @override
   String get backupPageImportBackupFile => '备份文件导入';
 
   @override
@@ -7518,6 +7533,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get fontPickerFilterHint => '输入以过滤字体…';
+
+  @override
+  String get fontPickerLocalFileOpenError => '无法打开本地字体文件选择器。';
 
   @override
   String get desktopFontLoading => '正在加载字体…';
@@ -9716,6 +9734,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get backupPageExportToFileSubtitle => '匯出APP資料為檔案';
 
   @override
+  String get backupPageExportFailed => '匯出失敗';
+
+  @override
+  String get backupPageExportSuccess => '匯出完成';
+
+  @override
   String get backupPageImportBackupFile => '備份檔案匯入';
 
   @override
@@ -11757,6 +11781,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get fontPickerFilterHint => '輸入以過濾字體…';
+
+  @override
+  String get fontPickerLocalFileOpenError => '無法開啟本機字體檔案選擇器。';
 
   @override
   String get desktopFontLoading => '正在載入字體…';

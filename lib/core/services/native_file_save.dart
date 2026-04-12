@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 
+import '../../utils/platform_utils.dart';
+
 class NativeFileSave {
   static const MethodChannel _channel = MethodChannel('app.file_save');
 
@@ -9,9 +11,9 @@ class NativeFileSave {
     required String sourcePath,
     String? fileName,
   }) async {
-    if (!Platform.isAndroid && !Platform.isIOS) {
+    if (!Platform.isAndroid && !Platform.isIOS && !PlatformUtils.isOhos) {
       throw UnsupportedError(
-        'Native file save is only supported on Android and iOS.',
+        'Native file save is only supported on Android, iOS, and OHOS.',
       );
     }
 

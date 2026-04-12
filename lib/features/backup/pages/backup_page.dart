@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../../l10n/app_localizations.dart';
@@ -44,6 +44,21 @@ class _BackupPageState extends State<BackupPage> {
   bool _loadingRemote = false;
   List<BackupFileItem> _remoteS3 = const <BackupFileItem>[];
   bool _loadingRemoteS3 = false;
+
+  static const XTypeGroup _zipTypeGroup = XTypeGroup(
+    label: 'zip',
+    extensions: <String>['zip'],
+  );
+
+  static const XTypeGroup _cherryTypeGroup = XTypeGroup(
+    label: 'backup',
+    extensions: <String>['zip', 'bak'],
+  );
+
+  static const XTypeGroup _jsonTypeGroup = XTypeGroup(
+    label: 'json',
+    extensions: <String>['json'],
+  );
 
   Future<bool?> _confirmCherryImport(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
@@ -1282,11 +1297,12 @@ class _BackupPageState extends State<BackupPage> {
 
                         if (!context.mounted) return;
                         // Pick Cherry Studio backup (.zip or .bak)
-                        final result = await FilePicker.platform.pickFiles(
-                          type: FileType.custom,
-                          allowedExtensions: ['zip', 'bak'],
+                        final file = await openFile(
+                          acceptedTypeGroups: const <XTypeGroup>[
+                            _cherryTypeGroup,
+                          ],
                         );
-                        final path = result?.files.single.path;
+                        final path = file?.path;
                         if (path == null) return;
                         if (!context.mounted) return;
 
@@ -1350,11 +1366,12 @@ class _BackupPageState extends State<BackupPage> {
                       label: l10n.backupPageImportFromChatbox,
                       onTap: () async {
                         // Pick Chatbox exported json
-                        final result = await FilePicker.platform.pickFiles(
-                          type: FileType.custom,
-                          allowedExtensions: ['json'],
+                        final file = await openFile(
+                          acceptedTypeGroups: const <XTypeGroup>[
+                            _jsonTypeGroup,
+                          ],
                         );
-                        final path = result?.files.single.path;
+                        final path = file?.path;
                         if (path == null) return;
                         if (!context.mounted) return;
 
@@ -1426,14 +1443,31 @@ class _BackupPageState extends State<BackupPage> {
     );
     if (!context.mounted) return;
 
-    final isMobile = Platform.isAndroid || Platform.isIOS;
-    if (isMobile) {
+    if (Platform.isAndroid || Platform.isIOS || PlatformUtils.isOhos) {
       try {
-        await NativeFileSave.saveFileFromPath(
+        final saved = await NativeFileSave.saveFileFromPath(
           sourcePath: file.path,
           fileName: file.uri.pathSegments.last,
         );
+        if (!saved) {
+          await Future<void>.delayed(const Duration(milliseconds: 250));
+          if (!context.mounted) return;
+          showAppSnackBar(
+            context,
+            message: l10n.backupPageExportFailed,
+            type: NotificationType.error,
+          );
+        } else {
+          await Future<void>.delayed(const Duration(milliseconds: 250));
+          if (!context.mounted) return;
+          showAppSnackBar(
+            context,
+            message: l10n.backupPageExportSuccess,
+            type: NotificationType.success,
+          );
+        }
       } catch (e) {
+        await Future<void>.delayed(const Duration(milliseconds: 250));
         if (!context.mounted) return;
         showAppSnackBar(
           context,
@@ -1442,12 +1476,12 @@ class _BackupPageState extends State<BackupPage> {
         );
       }
     } else {
-      final savePath = await FilePicker.platform.saveFile(
-        dialogTitle: l10n.backupPageExportToFile,
-        fileName: file.uri.pathSegments.last,
-        type: FileType.custom,
-        allowedExtensions: ['zip'],
+      final saveLocation = await getSaveLocation(
+        suggestedName: file.uri.pathSegments.last,
+        confirmButtonText: l10n.backupPageExportToFile,
+        acceptedTypeGroups: const <XTypeGroup>[_zipTypeGroup],
       );
+      final savePath = saveLocation?.path;
       if (savePath != null) {
         try {
           await File(savePath).parent.create(recursive: true);
@@ -1459,11 +1493,10 @@ class _BackupPageState extends State<BackupPage> {
 
   Future<void> _doImportLocal(BuildContext context, BackupProvider vm) async {
     final l10n = AppLocalizations.of(context)!;
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['zip'],
+    final file = await openFile(
+      acceptedTypeGroups: const <XTypeGroup>[_zipTypeGroup],
     );
-    final path = result?.files.single.path;
+    final path = file?.path;
     if (path == null) return;
     if (!context.mounted) return;
 

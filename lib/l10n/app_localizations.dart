@@ -2477,6 +2477,18 @@ abstract class AppLocalizations {
   /// **'Export app data to a file'**
   String get backupPageExportToFileSubtitle;
 
+  /// No description provided for @backupPageExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Export failed'**
+  String get backupPageExportFailed;
+
+  /// No description provided for @backupPageExportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Export completed'**
+  String get backupPageExportSuccess;
+
   /// No description provided for @backupPageImportBackupFile.
   ///
   /// In en, this message translates to:
@@ -6391,6 +6403,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Filter fonts...'**
   String get fontPickerFilterHint;
+
+  /// No description provided for @fontPickerLocalFileOpenError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to open the local font file picker.'**
+  String get fontPickerLocalFileOpenError;
 
   /// No description provided for @desktopFontLoading.
   ///

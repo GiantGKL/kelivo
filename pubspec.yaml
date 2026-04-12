@@ -70,6 +70,8 @@ dependencies:
   path: ^1.9.0
   path_provider: ^2.1.4
   file_picker: ^10.3.10
+  file_selector:
+    path: ../flutter_packages_ohos/packages/file_selector/file_selector
   archive: ^4.0.9
   xml: ^6.5.0
   open_filex: ^4.5.0
@@ -146,6 +148,9 @@ dependency_overrides:
 
   image_picker_ohos:
     path: ../flutter_packages_ohos/packages/image_picker/image_picker_ohos
+
+  file_selector_ohos:
+    path: ../flutter_packages_ohos/packages/file_selector/file_selector_ohos
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

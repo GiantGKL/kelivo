@@ -15,14 +15,18 @@
 
 import { FlutterAbility, FlutterEngine } from '@ohos/flutter_ohos';
 import { GeneratedPluginRegistrant } from '../plugins/GeneratedPluginRegistrant';
+import OhosFileSavePlugin from '../plugins/OhosFileSavePlugin';
 import SystemInfoPlugin from '../plugins/SystemInfoPlugin';
-import ImagePickerPlugin from 'image_picker_ohos';
+import PackageInfoPlugin from 'package_info_plus';
+import FileSelectorOhosPlugin from 'file_selector_ohos';
 
 export default class EntryAbility extends FlutterAbility {
   configureFlutterEngine(flutterEngine: FlutterEngine) {
     super.configureFlutterEngine(flutterEngine)
     GeneratedPluginRegistrant.registerWith(flutterEngine)
-    flutterEngine.getPlugins()?.add(new ImagePickerPlugin())
+    flutterEngine.getPlugins()?.add(new PackageInfoPlugin())
+    flutterEngine.getPlugins()?.add(new FileSelectorOhosPlugin())
+    flutterEngine.getPlugins()?.add(new OhosFileSavePlugin())
     flutterEngine.getPlugins()?.add(new SystemInfoPlugin())
   }
 }

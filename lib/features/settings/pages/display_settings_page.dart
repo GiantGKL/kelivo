@@ -12,8 +12,9 @@ import 'theme_settings_page.dart';
 import '../../../theme/palettes.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/ios_switch.dart';
+import '../../../shared/widgets/snackbar.dart';
 import '../../../core/services/haptics.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart';
 import 'google_fonts_picker_page.dart';
 
 enum _FontTarget { app, code }
@@ -397,17 +398,36 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
 
     final settings = context.read<SettingsProvider>();
     if (choice == 'local') {
-      final res = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: const ['ttf', 'otf'],
-      );
-      final path = res?.files.singleOrNull?.path;
-      if (path == null) return;
-      if (!context.mounted) return;
-      if (target == _FontTarget.app) {
-        await settings.setAppFontFromLocal(path: path);
-      } else {
-        await settings.setCodeFontFromLocal(path: path);
+      try {
+        const fontTypeGroup = XTypeGroup(
+          label: 'fonts',
+          extensions: <String>['ttf', 'otf'],
+        );
+        final XFile? file = await openFile(
+          acceptedTypeGroups: const <XTypeGroup>[fontTypeGroup],
+        );
+        final path = file?.path;
+        if (path == null || path.isEmpty) return;
+        if (!context.mounted) return;
+        if (target == _FontTarget.app) {
+          await settings.setAppFontFromLocal(path: path);
+        } else {
+          await settings.setCodeFontFromLocal(path: path);
+        }
+      } on PlatformException {
+        if (!context.mounted) return;
+        showAppSnackBar(
+          context,
+          message: l10n.fontPickerLocalFileOpenError,
+          type: NotificationType.error,
+        );
+      } catch (_) {
+        if (!context.mounted) return;
+        showAppSnackBar(
+          context,
+          message: l10n.fontPickerLocalFileOpenError,
+          type: NotificationType.error,
+        );
       }
       return;
     }
@@ -1421,9 +1441,8 @@ class ChatItemDisplaySettingsPage extends StatelessWidget {
                 icon: Lucide.MessageCircle,
                 label: l10n.displaySettingsPageShowUserNameTitle,
                 value: sp.showUserName,
-                onChanged: (v) => context
-                    .read<SettingsProvider>()
-                    .setShowUserName(v),
+                onChanged: (v) =>
+                    context.read<SettingsProvider>().setShowUserName(v),
               ),
               _iosDivider(context),
               _iosSwitchRow(
@@ -1431,9 +1450,8 @@ class ChatItemDisplaySettingsPage extends StatelessWidget {
                 icon: Lucide.clock,
                 label: l10n.displaySettingsPageShowUserTimestampTitle,
                 value: sp.showUserTimestamp,
-                onChanged: (v) => context
-                    .read<SettingsProvider>()
-                    .setShowUserTimestamp(v),
+                onChanged: (v) =>
+                    context.read<SettingsProvider>().setShowUserTimestamp(v),
               ),
               _iosDivider(context),
               _iosSwitchRow(
@@ -1470,9 +1488,8 @@ class ChatItemDisplaySettingsPage extends StatelessWidget {
                 icon: Lucide.MessageSquare,
                 label: l10n.displaySettingsPageShowModelNameTitle,
                 value: sp.showModelName,
-                onChanged: (v) => context
-                    .read<SettingsProvider>()
-                    .setShowModelName(v),
+                onChanged: (v) =>
+                    context.read<SettingsProvider>().setShowModelName(v),
               ),
               _iosDivider(context),
               _iosSwitchRow(
@@ -1480,9 +1497,8 @@ class ChatItemDisplaySettingsPage extends StatelessWidget {
                 icon: Lucide.clock,
                 label: l10n.displaySettingsPageShowModelTimestampTitle,
                 value: sp.showModelTimestamp,
-                onChanged: (v) => context
-                    .read<SettingsProvider>()
-                    .setShowModelTimestamp(v),
+                onChanged: (v) =>
+                    context.read<SettingsProvider>().setShowModelTimestamp(v),
               ),
               _iosDivider(context),
               _iosSwitchRow(
