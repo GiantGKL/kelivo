@@ -35,7 +35,7 @@
    - 如果要安装到真机，建议能正常使用 `hdc`
 4. **Git + 基本命令行环境**
 
-🔗 原项目提供 [TestFlight](https://testflight.apple.com/join/erbGGykR) 测试。
+
 
 ## 重要：本仓库依赖本地路径包
 
