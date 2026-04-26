@@ -1252,7 +1252,7 @@ Widget _iosNavRow(
                   child: Text(
                     label,
                     style: TextStyle(fontSize: 15, color: c),
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -1793,6 +1793,26 @@ class BehaviorStartupSettingsPage extends StatelessWidget {
                 value: sp.autoCollapseThinking,
                 onChanged: (v) =>
                     context.read<SettingsProvider>().setAutoCollapseThinking(v),
+              ),
+              _iosDivider(context),
+              _iosSwitchRow(
+                context,
+                icon: Lucide.ListTree,
+                label: l10n.displaySettingsPageCollapseThinkingStepsTitle,
+                value: sp.collapseThinkingSteps,
+                onChanged: (v) => context
+                    .read<SettingsProvider>()
+                    .setCollapseThinkingSteps(v),
+              ),
+              _iosDivider(context),
+              _iosSwitchRow(
+                context,
+                icon: Lucide.FileText,
+                label: l10n.displaySettingsPageShowToolResultSummaryTitle,
+                value: sp.showToolResultSummary,
+                onChanged: (v) => context
+                    .read<SettingsProvider>()
+                    .setShowToolResultSummary(v),
               ),
               _iosDivider(context),
               _iosSwitchRow(

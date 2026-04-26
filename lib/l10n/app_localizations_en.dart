@@ -506,11 +506,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get userProviderDefaultUserName => 'User';
 
   @override
-  String get homePageDeleteMessage => 'Delete Message';
+  String get homePageDeleteMessage => 'Delete This Version';
 
   @override
   String get homePageDeleteMessageConfirm =>
-      'Are you sure you want to delete this message? This cannot be undone.';
+      'Are you sure you want to delete this version? This cannot be undone.';
+
+  @override
+  String get homePageDeleteAllVersions => 'Delete All Versions';
+
+  @override
+  String get homePageDeleteAllVersionsConfirm =>
+      'Are you sure you want to delete all versions of this message? This cannot be undone.';
 
   @override
   String get homePageCancel => 'Cancel';
@@ -1510,7 +1517,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messageMoreSheetCreateBranch => 'Create Branch';
 
   @override
-  String get messageMoreSheetDelete => 'Delete';
+  String get messageMoreSheetDelete => 'Delete This Version';
+
+  @override
+  String get messageMoreSheetDeleteAllVersions => 'Delete All Versions';
 
   @override
   String get reasoningBudgetSheetOff => 'Off';
@@ -1625,7 +1635,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatMessageWidgetRegenerateConfirmContent =>
-      'Regenerating will overwrite all messages after this one and cannot be undone. Are you sure?';
+      'Regenerating only updates this message and keeps the messages below it. Continue?';
 
   @override
   String get chatMessageWidgetRegenerateConfirmCancel => 'Cancel';
@@ -2036,6 +2046,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatInputBarMoreTooltip => 'Add';
+
+  @override
+  String get chatInputBarQueuedPending => 'Queued to send';
+
+  @override
+  String get chatInputBarQueuedCancel => 'Cancel Queue';
 
   @override
   String get chatInputBarInsertNewline => 'Newline';
@@ -3087,6 +3103,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enable model\'s built-in search';
 
   @override
+  String get searchSettingsSheetClaudeDynamicSearchTitle =>
+      'Built-in Search (New)';
+
+  @override
+  String get searchSettingsSheetClaudeDynamicSearchDescription =>
+      'Use `web_search_20260209` with dynamic filtering on supported official Claude models.';
+
+  @override
   String get searchSettingsSheetWebSearchTitle => 'Web Search';
 
   @override
@@ -3243,6 +3267,30 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get displaySettingsPageAutoCollapseThinkingSubtitle =>
       'Collapse reasoning after finish';
+
+  @override
+  String get displaySettingsPageCollapseThinkingStepsTitle =>
+      'Collapse Thinking Steps';
+
+  @override
+  String get displaySettingsPageCollapseThinkingStepsSubtitle =>
+      'Show only the latest steps until expanded';
+
+  @override
+  String get displaySettingsPageShowToolResultSummaryTitle =>
+      'Show Tool Result Summary';
+
+  @override
+  String get displaySettingsPageShowToolResultSummarySubtitle =>
+      'Display the summary text below tool steps';
+
+  @override
+  String chainOfThoughtExpandSteps(Object count) {
+    return 'Show $count more steps';
+  }
+
+  @override
+  String get chainOfThoughtCollapse => 'Collapse';
 
   @override
   String get displaySettingsPageShowChatListDateTitle => 'Show Chat List Dates';

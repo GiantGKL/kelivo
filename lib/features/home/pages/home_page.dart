@@ -16,6 +16,7 @@ import '../../../core/providers/quick_phrase_provider.dart';
 import '../../../core/providers/instruction_injection_provider.dart';
 import '../../../core/providers/world_book_provider.dart';
 import '../../../core/models/quick_phrase.dart';
+import '../../../core/models/chat_input_data.dart';
 import '../../../core/models/chat_message.dart';
 import '../../../core/services/android_process_text.dart';
 import '../../../utils/sandbox_path_resolver.dart';
@@ -757,6 +758,7 @@ class _HomePageState extends State<HomePage>
         truncCollapsedIndex: _computeTruncCollapsedIndex(),
         reasoning: _controller.reasoning,
         reasoningSegments: _controller.reasoningSegments,
+        contentSplits: _controller.contentSplits,
         toolParts: _controller.toolParts,
         translations: _buildTranslationUiStates(),
         selecting: _controller.selecting,
@@ -775,6 +777,12 @@ class _HomePageState extends State<HomePage>
         onEditMessage: (message) => _controller.editMessage(message),
         onDeleteMessage: (message, byGroup) =>
             _handleDeleteMessage(context, message, byGroup),
+        onDeleteAllVersions: (message, byGroup) => _handleDeleteMessage(
+          context,
+          message,
+          byGroup,
+          deleteAllVersions: true,
+        ),
         onForkConversation: (message) => _controller.forkConversation(message),
         onShareMessage: (index, messages) =>
             _controller.shareMessage(index, messages),
@@ -849,16 +857,19 @@ class _HomePageState extends State<HomePage>
           );
         }
       },
-      onSend: (text) {
-        _controller.sendMessage(text);
-        _inputController.clear();
-        if (PlatformUtils.isMobile) {
+      onSend: (text) async {
+        final result = await _controller.sendMessage(text);
+        if (!mounted) return result;
+        if (PlatformUtils.isMobile &&
+            result == ChatInputSubmissionResult.sent) {
           _controller.dismissKeyboard();
-        } else {
-          _inputFocus.requestFocus();
         }
+        return result;
       },
       onStop: _controller.cancelStreaming,
+      hasQueuedInput: _controller.currentQueuedInput != null,
+      queuedPreviewText: _controller.currentQueuedInput?.input.text,
+      onCancelQueuedInput: _controller.cancelQueuedMessage,
       onQuickPhrase: _showQuickPhraseMenu,
       onLongPressQuickPhrase: () {
         Navigator.of(
@@ -1188,14 +1199,23 @@ class _HomePageState extends State<HomePage>
   Future<void> _handleDeleteMessage(
     BuildContext context,
     ChatMessage message,
-    Map<String, List<ChatMessage>> byGroup,
-  ) async {
+    Map<String, List<ChatMessage>> byGroup, {
+    bool deleteAllVersions = false,
+  }) async {
     final l10n = AppLocalizations.of(context)!;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(l10n.homePageDeleteMessage),
-        content: Text(l10n.homePageDeleteMessageConfirm),
+        title: Text(
+          deleteAllVersions
+              ? l10n.homePageDeleteAllVersions
+              : l10n.homePageDeleteMessage,
+        ),
+        content: Text(
+          deleteAllVersions
+              ? l10n.homePageDeleteAllVersionsConfirm
+              : l10n.homePageDeleteMessageConfirm,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -1212,6 +1232,14 @@ class _HomePageState extends State<HomePage>
       ),
     );
     if (confirm != true) return;
+
+    if (deleteAllVersions) {
+      await _controller.deleteAllMessageVersions(
+        message: message,
+        byGroup: byGroup,
+      );
+      return;
+    }
 
     await _controller.deleteMessage(message: message, byGroup: byGroup);
   }

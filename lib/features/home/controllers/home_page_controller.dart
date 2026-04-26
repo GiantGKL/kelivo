@@ -217,6 +217,8 @@ class HomePageController extends ChangeNotifier {
       _streamController.reasoning;
   Map<String, List<stream_ctrl.ReasoningSegmentData>> get reasoningSegments =>
       _streamController.reasoningSegments;
+  Map<String, stream_ctrl.ContentSplitData> get contentSplits =>
+      _streamController.contentSplits;
   Map<String, List<ToolUIPart>> get toolParts => _streamController.toolParts;
 
   /// Lightweight notifier for streaming content updates.
@@ -234,6 +236,8 @@ class HomePageController extends ChangeNotifier {
     if (cid == null) return false;
     return loadingConversationIds.contains(cid);
   }
+
+  QueuedChatInput? get currentQueuedInput => _viewModel.currentQueuedInput;
 
   ValueNotifier<bool> get isProcessingFiles => _viewModel.isProcessingFiles;
 
@@ -573,21 +577,39 @@ class HomePageController extends ChangeNotifier {
   // Public Methods - Message Actions
   // ============================================================================
 
-  Future<void> sendMessage(ChatInputData input) async {
+  Future<ChatInputSubmissionResult> sendMessage(ChatInputData input) async {
     final content = input.text.trim();
     if (content.isEmpty &&
         input.imagePaths.isEmpty &&
         input.documents.isEmpty) {
-      return;
+      return ChatInputSubmissionResult.rejected;
     }
     if (currentConversation == null) {
       await _createNewConversation();
     }
 
-    final success = await _viewModel.sendMessage(input);
-    if (success) {
+    final result = await _viewModel.sendMessage(input);
+    if (result != ChatInputSubmissionResult.rejected) {
       notifyListeners();
     }
+    return result;
+  }
+
+  void cancelQueuedMessage() {
+    final restored = _viewModel.cancelCurrentQueuedInput();
+    if (restored == null) return;
+
+    _inputController.value = TextEditingValue(
+      text: restored.text,
+      selection: TextSelection.collapsed(offset: restored.text.length),
+      composing: TextRange.empty,
+    );
+    _mediaController.restoreInput(restored);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_context.mounted) return;
+      _inputFocus.requestFocus();
+    });
+    notifyListeners();
   }
 
   Future<void> regenerateAtMessage(
@@ -595,18 +617,6 @@ class HomePageController extends ChangeNotifier {
     bool assistantAsNewReply = false,
   }) async {
     if (currentConversation == null) return;
-
-    final versioning = _messageGenerationService
-        .calculateRegenerationVersioning(
-          message: message,
-          messages: messages,
-          assistantAsNewReply: assistantAsNewReply,
-        );
-    if (versioning.lastKeep >= 0 && versioning.lastKeep < messages.length - 1) {
-      for (int i = versioning.lastKeep + 1; i < messages.length; i++) {
-        _translations.remove(messages[i].id);
-      }
-    }
 
     final success = await _viewModel.regenerateAtMessage(
       message,
@@ -720,6 +730,21 @@ class HomePageController extends ChangeNotifier {
   }) async {
     _translations.remove(message.id);
     await _viewModel.deleteMessage(message: message, byGroup: byGroup);
+    notifyListeners();
+  }
+
+  Future<void> deleteAllMessageVersions({
+    required ChatMessage message,
+    required Map<String, List<ChatMessage>> byGroup,
+  }) async {
+    final gid = (message.groupId ?? message.id);
+    for (final version in byGroup[gid] ?? const <ChatMessage>[]) {
+      _translations.remove(version.id);
+    }
+    await _viewModel.deleteAllMessageVersions(
+      message: message,
+      byGroup: byGroup,
+    );
     notifyListeners();
   }
 

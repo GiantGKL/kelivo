@@ -1016,14 +1016,26 @@ abstract class AppLocalizations {
   /// No description provided for @homePageDeleteMessage.
   ///
   /// In en, this message translates to:
-  /// **'Delete Message'**
+  /// **'Delete This Version'**
   String get homePageDeleteMessage;
 
   /// No description provided for @homePageDeleteMessageConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Are you sure you want to delete this message? This cannot be undone.'**
+  /// **'Are you sure you want to delete this version? This cannot be undone.'**
   String get homePageDeleteMessageConfirm;
+
+  /// No description provided for @homePageDeleteAllVersions.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete All Versions'**
+  String get homePageDeleteAllVersions;
+
+  /// No description provided for @homePageDeleteAllVersionsConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete all versions of this message? This cannot be undone.'**
+  String get homePageDeleteAllVersionsConfirm;
 
   /// No description provided for @homePageCancel.
   ///
@@ -2942,8 +2954,14 @@ abstract class AppLocalizations {
   /// No description provided for @messageMoreSheetDelete.
   ///
   /// In en, this message translates to:
-  /// **'Delete'**
+  /// **'Delete This Version'**
   String get messageMoreSheetDelete;
+
+  /// No description provided for @messageMoreSheetDeleteAllVersions.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete All Versions'**
+  String get messageMoreSheetDeleteAllVersions;
 
   /// No description provided for @reasoningBudgetSheetOff.
   ///
@@ -3134,7 +3152,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatMessageWidgetRegenerateConfirmContent.
   ///
   /// In en, this message translates to:
-  /// **'Regenerating will overwrite all messages after this one and cannot be undone. Are you sure?'**
+  /// **'Regenerating only updates this message and keeps the messages below it. Continue?'**
   String get chatMessageWidgetRegenerateConfirmContent;
 
   /// No description provided for @chatMessageWidgetRegenerateConfirmCancel.
@@ -3856,6 +3874,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add'**
   String get chatInputBarMoreTooltip;
+
+  /// No description provided for @chatInputBarQueuedPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued to send'**
+  String get chatInputBarQueuedPending;
+
+  /// No description provided for @chatInputBarQueuedCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Queue'**
+  String get chatInputBarQueuedCancel;
 
   /// No description provided for @chatInputBarInsertNewline.
   ///
@@ -5816,6 +5846,18 @@ abstract class AppLocalizations {
   /// **'Enable model\'s built-in search'**
   String get searchSettingsSheetBuiltinSearchDescription;
 
+  /// No description provided for @searchSettingsSheetClaudeDynamicSearchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in Search (New)'**
+  String get searchSettingsSheetClaudeDynamicSearchTitle;
+
+  /// No description provided for @searchSettingsSheetClaudeDynamicSearchDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use `web_search_20260209` with dynamic filtering on supported official Claude models.'**
+  String get searchSettingsSheetClaudeDynamicSearchDescription;
+
   /// No description provided for @searchSettingsSheetWebSearchTitle.
   ///
   /// In en, this message translates to:
@@ -6085,6 +6127,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Collapse reasoning after finish'**
   String get displaySettingsPageAutoCollapseThinkingSubtitle;
+
+  /// No description provided for @displaySettingsPageCollapseThinkingStepsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse Thinking Steps'**
+  String get displaySettingsPageCollapseThinkingStepsTitle;
+
+  /// No description provided for @displaySettingsPageCollapseThinkingStepsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show only the latest steps until expanded'**
+  String get displaySettingsPageCollapseThinkingStepsSubtitle;
+
+  /// No description provided for @displaySettingsPageShowToolResultSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Tool Result Summary'**
+  String get displaySettingsPageShowToolResultSummaryTitle;
+
+  /// No description provided for @displaySettingsPageShowToolResultSummarySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Display the summary text below tool steps'**
+  String get displaySettingsPageShowToolResultSummarySubtitle;
+
+  /// No description provided for @chainOfThoughtExpandSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Show {count} more steps'**
+  String chainOfThoughtExpandSteps(Object count);
+
+  /// No description provided for @chainOfThoughtCollapse.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse'**
+  String get chainOfThoughtCollapse;
 
   /// No description provided for @displaySettingsPageShowChatListDateTitle.
   ///
