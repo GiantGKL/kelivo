@@ -247,6 +247,28 @@ void _maybeAddStreamingUsageOptions(
   }
 }
 
+int _readOpenAIUsageInt(dynamic value) {
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value) ?? 0;
+  return 0;
+}
+
+TokenUsage? _mergeOpenAICompatibleUsage(TokenUsage? current, dynamic rawUsage) {
+  if (rawUsage is! Map) return current;
+
+  final details = rawUsage['prompt_tokens_details'];
+  final cachedTokens = details is Map
+      ? _readOpenAIUsageInt(details['cached_tokens'])
+      : 0;
+  return (current ?? const TokenUsage()).merge(
+    TokenUsage(
+      promptTokens: _readOpenAIUsageInt(rawUsage['prompt_tokens']),
+      completionTokens: _readOpenAIUsageInt(rawUsage['completion_tokens']),
+      cachedTokens: cachedTokens,
+    ),
+  );
+}
+
 String _stripDataUrlPrefix(String dataUrl) {
   final commaIndex = dataUrl.indexOf(',');
   if (commaIndex >= 0 && commaIndex + 1 < dataUrl.length) {
@@ -435,6 +457,129 @@ Future<List<Map<String, dynamic>>> _buildLongCatOmniMessages(
       parts.add({'type': 'text', 'text': raw});
     }
 
+    outMsg['content'] = parts;
+    out.add(outMsg);
+  }
+  return out;
+}
+
+Future<List<Map<String, dynamic>>> _buildOpenAIChatCompletionMessages(
+  List<Map<String, dynamic>> messages, {
+  List<String>? userMediaPaths,
+  required bool canImageInput,
+}) async {
+  final out = <Map<String, dynamic>>[];
+  for (int i = 0; i < messages.length; i++) {
+    final m = messages[i];
+    final isLast = i == messages.length - 1;
+    final raw = (m['content'] ?? '').toString();
+    final role = (m['role'] ?? 'user').toString();
+    final outMsg = Map<String, dynamic>.from(m);
+    outMsg.remove(multimodalInternalMediaPathsKey);
+    outMsg['role'] = role;
+
+    if (role == 'system') {
+      outMsg['content'] = raw;
+      out.add(outMsg);
+      continue;
+    }
+
+    if (role == 'tool' ||
+        (role == 'assistant' &&
+            outMsg['tool_calls'] is List &&
+            (outMsg['tool_calls'] as List).isNotEmpty)) {
+      outMsg['content'] = raw;
+      out.add(outMsg);
+      continue;
+    }
+
+    final hasMarkdownImages = raw.contains('![') && raw.contains('](');
+    final hasCustomImages = raw.contains('[image:');
+    final hasAttachedImages =
+        isLast && (userMediaPaths?.isNotEmpty == true) && (role == 'user');
+
+    if (!hasMarkdownImages && !hasCustomImages && !hasAttachedImages) {
+      outMsg['content'] = raw;
+      out.add(outMsg);
+      continue;
+    }
+
+    final parsed = await _parseTextAndImages(
+      raw,
+      allowRemoteImages: canImageInput,
+      allowLocalImages: true,
+      keepRemoteMarkdownText: true,
+    );
+    final parts = <Map<String, dynamic>>[];
+    final seenSources = <String>{};
+    final seenImageUrls = <String>{};
+    final seenVideoUrls = <String>{};
+
+    String normalizeSrc(String src) {
+      if (src.startsWith('http') || src.startsWith('data:')) return src;
+      try {
+        return SandboxPathResolver.fix(src);
+      } catch (_) {
+        return src;
+      }
+    }
+
+    void addImageUrl(String url) {
+      if (url.isEmpty) return;
+      if (seenImageUrls.add(url)) {
+        parts.add({
+          'type': 'image_url',
+          'image_url': {'url': url},
+        });
+      }
+    }
+
+    void addVideoUrl(String url) {
+      if (url.isEmpty) return;
+      if (seenVideoUrls.add(url)) {
+        parts.add({
+          'type': 'video_url',
+          'video_url': {'url': url},
+        });
+      }
+    }
+
+    if (parsed.text.isNotEmpty) {
+      parts.add({'type': 'text', 'text': parsed.text});
+    }
+    for (final ref in parsed.images) {
+      final normalized = normalizeSrc(ref.src);
+      if (!seenSources.add(normalized)) continue;
+      final String url;
+      if (ref.kind == 'data') {
+        url = ref.src;
+      } else if (ref.kind == 'path') {
+        url = await _encodeBase64File(ref.src, withPrefix: true);
+      } else {
+        url = ref.src;
+      }
+      addImageUrl(url);
+    }
+    if (hasAttachedImages) {
+      for (final p in userMediaPaths!) {
+        final normalized = normalizeSrc(p);
+        if (!seenSources.add(normalized)) continue;
+        final bool isInlineUrl = p.startsWith('http') || p.startsWith('data:');
+        final String mime = isInlineUrl
+            ? _mimeFromDataUrl(p)
+            : _mimeFromPath(p);
+        if (isAudioMime(mime)) continue;
+        final bool isVideo = isVideoMime(mime);
+        final String dataUrl = isInlineUrl
+            ? p
+            : await _encodeBase64File(p, withPrefix: true);
+        if (isVideo) {
+          addVideoUrl(dataUrl);
+        } else {
+          addImageUrl(dataUrl);
+        }
+      }
+    }
     outMsg['content'] = parts;
     out.add(outMsg);
   }
@@ -875,125 +1020,11 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
         if (tools != null && tools.isNotEmpty) 'tool_choice': 'auto',
       };
     } else {
-      final mm = <Map<String, dynamic>>[];
-      for (int i = 0; i < messages.length; i++) {
-        final m = messages[i];
-        final isLast = i == messages.length - 1;
-        final raw = (m['content'] ?? '').toString();
-        final role = (m['role'] ?? 'user').toString();
-        final outMsg = Map<String, dynamic>.from(m);
-        outMsg.remove(multimodalInternalMediaPathsKey);
-        outMsg['role'] = role;
-
-        // System 消息保持为纯文本，不解析为图片
-        if (role == 'system') {
-          outMsg['content'] = raw;
-          mm.add(outMsg);
-          continue;
-        }
-
-        // Tool / tool_calls messages must preserve tool-specific fields (tool_call_id / tool_calls / name).
-        // Also do not convert tool output to multimodal parts, as many OpenAI-compatible backends require tool content to be a string.
-        if (role == 'tool' ||
-            (role == 'assistant' &&
-                outMsg['tool_calls'] is List &&
-                (outMsg['tool_calls'] as List).isNotEmpty)) {
-          outMsg['content'] = raw;
-          mm.add(outMsg);
-          continue;
-        }
-
-        // Only parse images if there are images to process
-        final hasMarkdownImages = raw.contains('![') && raw.contains('](');
-        final hasCustomImages = raw.contains('[image:');
-        final hasAttachedImages =
-            isLast && (userImagePaths?.isNotEmpty == true) && (role == 'user');
-
-        if (hasMarkdownImages || hasCustomImages || hasAttachedImages) {
-          final parsed = await _parseTextAndImages(
-            raw,
-            allowRemoteImages: canImageInput,
-            allowLocalImages: true,
-            keepRemoteMarkdownText: true,
-          );
-          final parts = <Map<String, dynamic>>[];
-          final seenSources = <String>{};
-          final seenImageUrls = <String>{};
-          final seenVideoUrls = <String>{};
-          String normalizeSrc(String src) {
-            if (src.startsWith('http') || src.startsWith('data:')) return src;
-            try {
-              return SandboxPathResolver.fix(src);
-            } catch (_) {
-              return src;
-            }
-          }
-
-          void addImageUrl(String url) {
-            if (url.isEmpty) return;
-            if (seenImageUrls.add(url)) {
-              parts.add({
-                'type': 'image_url',
-                'image_url': {'url': url},
-              });
-            }
-          }
-
-          void addVideoUrl(String url) {
-            if (url.isEmpty) return;
-            if (seenVideoUrls.add(url)) {
-              parts.add({
-                'type': 'video_url',
-                'video_url': {'url': url},
-              });
-            }
-          }
-
-          if (parsed.text.isNotEmpty) {
-            parts.add({'type': 'text', 'text': parsed.text});
-          }
-          for (final ref in parsed.images) {
-            final normalized = normalizeSrc(ref.src);
-            if (!seenSources.add(normalized)) continue;
-            String url;
-            if (ref.kind == 'data') {
-              url = ref.src;
-            } else if (ref.kind == 'path') {
-              url = await _encodeBase64File(ref.src, withPrefix: true);
-            } else {
-              url = ref.src;
-            }
-            addImageUrl(url);
-          }
-          if (hasAttachedImages) {
-            for (final p in userImagePaths!) {
-              final normalized = normalizeSrc(p);
-              if (!seenSources.add(normalized)) continue;
-              final bool isInlineUrl =
-                  p.startsWith('http') || p.startsWith('data:');
-              final String mime = isInlineUrl
-                  ? _mimeFromDataUrl(p)
-                  : _mimeFromPath(p);
-              if (isAudioMime(mime)) continue;
-              final bool isVideo = isVideoMime(mime);
-              final String dataUrl = isInlineUrl
-                  ? p
-                  : await _encodeBase64File(p, withPrefix: true);
-              if (isVideo) {
-                addVideoUrl(dataUrl);
-              } else {
-                addImageUrl(dataUrl);
-              }
-            }
-          }
-          outMsg['content'] = parts;
-          mm.add(outMsg);
-        } else {
-          // No images, use simple string content
-          outMsg['content'] = raw;
-          mm.add(outMsg);
-        }
-      }
+      final mm = await _buildOpenAIChatCompletionMessages(
+        messages,
+        userMediaPaths: userImagePaths,
+        canImageInput: canImageInput,
+      );
       body = {
         'model': upstreamModelId,
         'messages': mm,
@@ -1390,7 +1421,11 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
                   next,
                   userMediaPaths: userImagePaths,
                 )
-              : next;
+              : await _buildOpenAIChatCompletionMessages(
+                  next,
+                  userMediaPaths: userImagePaths,
+                  canImageInput: canImageInput,
+                );
           reqBody.remove('stream');
           req.body = jsonEncode(reqBody);
           final resp2 = await client.send(req);
@@ -1603,7 +1638,11 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
                   }
                 : {
                     'model': upstreamModelId,
-                    'messages': currentMessages,
+                    'messages': await _buildOpenAIChatCompletionMessages(
+                      currentMessages,
+                      userMediaPaths: userImagePaths,
+                      canImageInput: canImageInput,
+                    ),
                     'stream': true,
                     if (temperature != null) 'temperature': temperature,
                     if (topP != null) 'top_p': topP,
@@ -1780,6 +1819,10 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
                 }
                 try {
                   final o = jsonDecode(d);
+                  if (o is Map) {
+                    usage = _mergeOpenAICompatibleUsage(usage, o['usage']);
+                    if (usage != null) totalTokens = usage.totalTokens;
+                  }
                   if (o is Map &&
                       o['choices'] is List &&
                       (o['choices'] as List).isNotEmpty) {
@@ -1790,23 +1833,6 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
                     final txt = _extractOpenAICompatibleDeltaText(delta);
                     final rc =
                         delta?['reasoning_content'] ?? delta?['reasoning'];
-                    final u = o['usage'];
-                    if (u != null) {
-                      final prompt = (u['prompt_tokens'] ?? 0) as int;
-                      final completion = (u['completion_tokens'] ?? 0) as int;
-                      final cached =
-                          (u['prompt_tokens_details']?['cached_tokens'] ?? 0)
-                              as int? ??
-                          0;
-                      usage = (usage ?? const TokenUsage()).merge(
-                        TokenUsage(
-                          promptTokens: prompt,
-                          completionTokens: completion,
-                          cachedTokens: cached,
-                        ),
-                      );
-                      totalTokens = usage.totalTokens;
-                    }
                     // Capture Grok citations
                     final gCitations = o['citations'];
                     if (gCitations is List && gCitations.isNotEmpty) {
@@ -2900,22 +2926,8 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
               finishReason = 'tool_calls';
             }
           }
-          final u = json['usage'];
-          if (u != null) {
-            final prompt = (u['prompt_tokens'] ?? 0) as int;
-            final completion = (u['completion_tokens'] ?? 0) as int;
-            final cached =
-                (u['prompt_tokens_details']?['cached_tokens'] ?? 0) as int? ??
-                0;
-            usage = (usage ?? const TokenUsage()).merge(
-              TokenUsage(
-                promptTokens: prompt,
-                completionTokens: completion,
-                cachedTokens: cached,
-              ),
-            );
-            totalTokens = usage.totalTokens;
-          }
+          usage = _mergeOpenAICompatibleUsage(usage, json['usage']);
+          if (usage != null) totalTokens = usage.totalTokens;
         }
 
         if (content.isNotEmpty || (reasoning?.isNotEmpty ?? false)) {
@@ -3052,7 +3064,11 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
                   }
                 : {
                     'model': upstreamModelId,
-                    'messages': currentMessages,
+                    'messages': await _buildOpenAIChatCompletionMessages(
+                      currentMessages,
+                      userMediaPaths: userImagePaths,
+                      canImageInput: canImageInput,
+                    ),
                     'stream': true,
                     if (temperature != null) 'temperature': temperature,
                     if (topP != null) 'top_p': topP,
@@ -3218,6 +3234,10 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
                 }
                 try {
                   final o = jsonDecode(d);
+                  if (o is Map) {
+                    usage = _mergeOpenAICompatibleUsage(usage, o['usage']);
+                    if (usage != null) totalTokens = usage.totalTokens;
+                  }
                   if (o is Map &&
                       o['choices'] is List &&
                       (o['choices'] as List).isNotEmpty) {
@@ -3227,23 +3247,6 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
                     final txt = _extractOpenAICompatibleDeltaText(delta);
                     final rc =
                         delta?['reasoning_content'] ?? delta?['reasoning'];
-                    final u = o['usage'];
-                    if (u != null) {
-                      final prompt = (u['prompt_tokens'] ?? 0) as int;
-                      final completion = (u['completion_tokens'] ?? 0) as int;
-                      final cached =
-                          (u['prompt_tokens_details']?['cached_tokens'] ?? 0)
-                              as int? ??
-                          0;
-                      usage = (usage ?? const TokenUsage()).merge(
-                        TokenUsage(
-                          promptTokens: prompt,
-                          completionTokens: completion,
-                          cachedTokens: cached,
-                        ),
-                      );
-                      totalTokens = usage.totalTokens;
-                    }
                     // Capture Grok citations
                     final gCitations = o['citations'];
                     if (gCitations is List && gCitations.isNotEmpty) {
@@ -3650,7 +3653,11 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
                       }
                     : {
                         'model': upstreamModelId,
-                        'messages': currentMessages,
+                        'messages': await _buildOpenAIChatCompletionMessages(
+                          currentMessages,
+                          userMediaPaths: userImagePaths,
+                          canImageInput: canImageInput,
+                        ),
                         'stream': true,
                         if (temperature != null) 'temperature': temperature,
                         if (topP != null) 'top_p': topP,
@@ -3810,6 +3817,10 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
                     }
                     try {
                       final o = jsonDecode(d);
+                      if (o is Map) {
+                        usage = _mergeOpenAICompatibleUsage(usage, o['usage']);
+                        if (usage != null) totalTokens = usage.totalTokens;
+                      }
                       if (o is Map &&
                           o['choices'] is List &&
                           (o['choices'] as List).isNotEmpty) {
@@ -3819,25 +3830,6 @@ Stream<ChatStreamChunk> _sendOpenAIStream(
                         final txt = _extractOpenAICompatibleDeltaText(delta);
                         final rc =
                             delta?['reasoning_content'] ?? delta?['reasoning'];
-                        final u = o['usage'];
-                        if (u != null) {
-                          final prompt = (u['prompt_tokens'] ?? 0) as int;
-                          final completion =
-                              (u['completion_tokens'] ?? 0) as int;
-                          final cached =
-                              (u['prompt_tokens_details']?['cached_tokens'] ??
-                                      0)
-                                  as int? ??
-                              0;
-                          usage = (usage ?? const TokenUsage()).merge(
-                            TokenUsage(
-                              promptTokens: prompt,
-                              completionTokens: completion,
-                              cachedTokens: cached,
-                            ),
-                          );
-                          totalTokens = usage.totalTokens;
-                        }
                         if (rc is String && rc.isNotEmpty) {
                           if (needsReasoningEcho) reasoningAccum += rc;
                           yield ChatStreamChunk(

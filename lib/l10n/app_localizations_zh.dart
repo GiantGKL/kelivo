@@ -253,6 +253,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsPageAbout => '关于';
 
   @override
+  String get settingsPageStatistics => '统计';
+
+  @override
   String get settingsPageDocs => '使用文档';
 
   @override
@@ -263,6 +266,117 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsPageShare => '分享';
+
+  @override
+  String get statsPageTitle => '统计';
+
+  @override
+  String get statsPageRangeAllTime => '全部';
+
+  @override
+  String get statsPageRangeLast30Days => '最近 30 天';
+
+  @override
+  String get statsPageRangePreviousMonth => '上个月';
+
+  @override
+  String get statsPageRangePreviousQuarter => '上个季度';
+
+  @override
+  String get statsPageRangeCustom => '自定义';
+
+  @override
+  String get statsPageHeatmapTitle => '聊天热力图';
+
+  @override
+  String get statsPageHeatmapLess => '少';
+
+  @override
+  String get statsPageHeatmapMore => '多';
+
+  @override
+  String get statsPageSummaryTitle => '总览';
+
+  @override
+  String get statsPageTotalConversations => '总对话数';
+
+  @override
+  String get statsPageTotalMessages => '总消息数';
+
+  @override
+  String get statsPageInputTokens => '输入 Tokens';
+
+  @override
+  String get statsPageOutputTokens => '输出 Tokens';
+
+  @override
+  String get statsPageCachedTokens => '缓存 Tokens';
+
+  @override
+  String get statsPageLaunchCount => '应用启动次数';
+
+  @override
+  String get statsPageUsageTrendTitle => '用量趋势';
+
+  @override
+  String get statsPageModelUsageTitle => '模型使用率';
+
+  @override
+  String get statsPageAssistantUsageTitle => '助手使用率';
+
+  @override
+  String get statsPageTopicVolumeTitle => '话题内容量';
+
+  @override
+  String get statsPageModelColumn => '模型';
+
+  @override
+  String get statsPageAssistantColumn => '助手';
+
+  @override
+  String get statsPageTopicColumn => '话题';
+
+  @override
+  String get statsPageMessagesColumn => '消息数';
+
+  @override
+  String get statsPageTopicsColumn => '话题数';
+
+  @override
+  String get statsPageEmptyTitle => '暂无统计数据';
+
+  @override
+  String get statsPageShowAllTooltip => '查看全部';
+
+  @override
+  String get statsPageClose => '关闭';
+
+  @override
+  String get statsPageUnknownProvider => '未知供应商';
+
+  @override
+  String get statsPageUnknownAssistant => '默认助手';
+
+  @override
+  String get statsPageUnknownModel => '未知模型';
+
+  @override
+  String get statsPageUnknownTopic => '未命名话题';
+
+  @override
+  String get statsPageCustomRangeTitle => '自定义时间段';
+
+  @override
+  String get statsPageCustomRangeStart => '开始';
+
+  @override
+  String get statsPageCustomRangeEnd => '结束';
+
+  @override
+  String get statsPageCustomRangeCancel => '取消';
+
+  @override
+  String get statsPageCustomRangeApply => '应用';
 
   @override
   String get sponsorPageMethodsSectionTitle => '赞助方式';
@@ -1018,6 +1132,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get codeBlockPreviewButton => '预览';
 
   @override
+  String get codeBlockSaveAsButton => '另存为文件';
+
+  @override
+  String get codeBlockCollapseButton => '折叠';
+
+  @override
+  String get codeBlockExpandButton => '展开';
+
+  @override
+  String get codeBlockDefaultFileNameStem => '代码';
+
+  @override
   String codeBlockCollapsedLines(int n) {
     return '… 已折叠 $n 行';
   }
@@ -1593,6 +1719,10 @@ class AppLocalizationsZh extends AppLocalizations {
       '重新生成只会更新当前消息，不会删除下面的消息。确定要继续吗？';
 
   @override
+  String get chatMessageWidgetRegenerateConfirmDeleteTrailingContent =>
+      '重新生成将会删除此消息下面的所有消息，且无法撤销。确定要继续吗？';
+
+  @override
   String get chatMessageWidgetRegenerateConfirmCancel => '取消';
 
   @override
@@ -1980,6 +2110,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get chatInputBarMoreTooltip => '更多';
+
+  @override
+  String get chatInputBarImageMode => '绘图模式';
+
+  @override
+  String get chatInputBarDisableImageModeTooltip => '关闭绘图模式';
 
   @override
   String get chatInputBarQueuedPending => '排队中';
@@ -2519,6 +2655,40 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get providerDetailPageAihubmixAppCodeHelp =>
       '为请求附加 APP-Code，可享 10% 优惠，仅对 AIhubmix 生效。';
+
+  @override
+  String get providerDetailPageBalanceTitle => '账户余额';
+
+  @override
+  String get providerDetailPageBalanceInfo => '获取账户余额';
+
+  @override
+  String get providerDetailPageBalanceApiPathLabel => '余额 API 路径';
+
+  @override
+  String get providerDetailPageBalanceResultPathLabel => '结果 JSON 路径';
+
+  @override
+  String get providerDetailPageBalanceQueryButton => '查询余额';
+
+  @override
+  String get providerDetailPageBalanceQuerying => '查询中...';
+
+  @override
+  String get providerDetailPageBalanceResetDefaultsButton => '重置';
+
+  @override
+  String get providerDetailPageBalanceResetDefaultsTooltip => '重置余额设置';
+
+  @override
+  String providerDetailPageBalanceResult(String value) {
+    return '余额：$value';
+  }
+
+  @override
+  String providerDetailPageBalanceError(String message) {
+    return '余额查询失败：$message';
+  }
 
   @override
   String get providerDetailPageVertexAiTitle => 'Vertex AI';
@@ -3166,6 +3336,13 @@ class AppLocalizationsZh extends AppLocalizations {
       '在工具步骤下方显示摘要文本';
 
   @override
+  String get displaySettingsPageRegenerateDeleteTrailingMessagesTitle =>
+      '重新生成时删除下面的消息';
+
+  @override
+  String get displaySettingsPageShowRegenerateConfirmDialogTitle => '重新生成前弹出确认';
+
+  @override
   String chainOfThoughtExpandSteps(Object count) {
     return '展开更多 $count 步';
   }
@@ -3178,6 +3355,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get displaySettingsPageShowChatListDateSubtitle => '在左侧对话列表中显示日期分组标签';
+
+  @override
+  String get displaySettingsPageEnableImageCropperTitle => '启用图片裁剪';
+
+  @override
+  String get displaySettingsPageEnableImageCropperSubtitle =>
+      '从相册或相机选择图片后，允许裁剪图片';
 
   @override
   String get displaySettingsPageKeepSidebarOpenOnAssistantTapTitle =>
@@ -3602,6 +3786,28 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get searchProviderBochaDescription =>
       '博查 AI 全网网页搜索，支持时间范围与摘要，更适合 AI 使用。';
+
+  @override
+  String get searchServiceNameSerper => 'Serper';
+
+  @override
+  String get searchProviderSerperDescription =>
+      'Serper Google 搜索 API。响应快速，支持国家/地区、语言、时间和页码过滤。';
+
+  @override
+  String get searchServicesDialogCountryOptional => '国家/地区（可选）';
+
+  @override
+  String get searchServicesDialogLanguageOptional => '语言（可选）';
+
+  @override
+  String get searchServicesDialogTimeFilterOptional => '时间过滤（可选）';
+
+  @override
+  String get searchServicesDialogPageOptional => '页码（可选）';
+
+  @override
+  String get searchServicesDialogPageInvalid => '页码必须是正整数。';
 
   @override
   String get generationInterrupted => '生成已中断';
@@ -4571,6 +4777,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get settingsPageAbout => '关于';
 
   @override
+  String get settingsPageStatistics => '统计';
+
+  @override
   String get settingsPageDocs => '使用文档';
 
   @override
@@ -4581,6 +4790,117 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get settingsPageShare => '分享';
+
+  @override
+  String get statsPageTitle => '统计';
+
+  @override
+  String get statsPageRangeAllTime => '全部';
+
+  @override
+  String get statsPageRangeLast30Days => '最近 30 天';
+
+  @override
+  String get statsPageRangePreviousMonth => '上个月';
+
+  @override
+  String get statsPageRangePreviousQuarter => '上个季度';
+
+  @override
+  String get statsPageRangeCustom => '自定义';
+
+  @override
+  String get statsPageHeatmapTitle => '聊天热力图';
+
+  @override
+  String get statsPageHeatmapLess => '少';
+
+  @override
+  String get statsPageHeatmapMore => '多';
+
+  @override
+  String get statsPageSummaryTitle => '总览';
+
+  @override
+  String get statsPageTotalConversations => '总对话数';
+
+  @override
+  String get statsPageTotalMessages => '总消息数';
+
+  @override
+  String get statsPageInputTokens => '输入 Tokens';
+
+  @override
+  String get statsPageOutputTokens => '输出 Tokens';
+
+  @override
+  String get statsPageCachedTokens => '缓存 Tokens';
+
+  @override
+  String get statsPageLaunchCount => '应用启动次数';
+
+  @override
+  String get statsPageUsageTrendTitle => '用量趋势';
+
+  @override
+  String get statsPageModelUsageTitle => '模型使用率';
+
+  @override
+  String get statsPageAssistantUsageTitle => '助手使用率';
+
+  @override
+  String get statsPageTopicVolumeTitle => '话题内容量';
+
+  @override
+  String get statsPageModelColumn => '模型';
+
+  @override
+  String get statsPageAssistantColumn => '助手';
+
+  @override
+  String get statsPageTopicColumn => '话题';
+
+  @override
+  String get statsPageMessagesColumn => '消息数';
+
+  @override
+  String get statsPageTopicsColumn => '话题数';
+
+  @override
+  String get statsPageEmptyTitle => '暂无统计数据';
+
+  @override
+  String get statsPageShowAllTooltip => '查看全部';
+
+  @override
+  String get statsPageClose => '关闭';
+
+  @override
+  String get statsPageUnknownProvider => '未知供应商';
+
+  @override
+  String get statsPageUnknownAssistant => '默认助手';
+
+  @override
+  String get statsPageUnknownModel => '未知模型';
+
+  @override
+  String get statsPageUnknownTopic => '未命名话题';
+
+  @override
+  String get statsPageCustomRangeTitle => '自定义时间段';
+
+  @override
+  String get statsPageCustomRangeStart => '开始';
+
+  @override
+  String get statsPageCustomRangeEnd => '结束';
+
+  @override
+  String get statsPageCustomRangeCancel => '取消';
+
+  @override
+  String get statsPageCustomRangeApply => '应用';
 
   @override
   String get sponsorPageMethodsSectionTitle => '赞助方式';
@@ -5336,6 +5656,18 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get codeBlockPreviewButton => '预览';
 
   @override
+  String get codeBlockSaveAsButton => '另存为文件';
+
+  @override
+  String get codeBlockCollapseButton => '折叠';
+
+  @override
+  String get codeBlockExpandButton => '展开';
+
+  @override
+  String get codeBlockDefaultFileNameStem => '代码';
+
+  @override
   String codeBlockCollapsedLines(int n) {
     return '… 已折叠 $n 行';
   }
@@ -5911,6 +6243,10 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
       '重新生成只会更新当前消息，不会删除下面的消息。确定要继续吗？';
 
   @override
+  String get chatMessageWidgetRegenerateConfirmDeleteTrailingContent =>
+      '重新生成将会删除此消息下面的所有消息，且无法撤销。确定要继续吗？';
+
+  @override
   String get chatMessageWidgetRegenerateConfirmCancel => '取消';
 
   @override
@@ -6298,6 +6634,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get chatInputBarMoreTooltip => '更多';
+
+  @override
+  String get chatInputBarImageMode => '绘图模式';
+
+  @override
+  String get chatInputBarDisableImageModeTooltip => '关闭绘图模式';
 
   @override
   String get chatInputBarQueuedPending => '排队中';
@@ -6837,6 +7179,40 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String get providerDetailPageAihubmixAppCodeHelp =>
       '为请求附加 APP-Code，可享 10% 优惠，仅对 AIhubmix 生效。';
+
+  @override
+  String get providerDetailPageBalanceTitle => '账户余额';
+
+  @override
+  String get providerDetailPageBalanceInfo => '获取账户余额';
+
+  @override
+  String get providerDetailPageBalanceApiPathLabel => '余额 API 路径';
+
+  @override
+  String get providerDetailPageBalanceResultPathLabel => '结果 JSON 路径';
+
+  @override
+  String get providerDetailPageBalanceQueryButton => '查询余额';
+
+  @override
+  String get providerDetailPageBalanceQuerying => '查询中...';
+
+  @override
+  String get providerDetailPageBalanceResetDefaultsButton => '重置';
+
+  @override
+  String get providerDetailPageBalanceResetDefaultsTooltip => '重置余额设置';
+
+  @override
+  String providerDetailPageBalanceResult(String value) {
+    return '余额：$value';
+  }
+
+  @override
+  String providerDetailPageBalanceError(String message) {
+    return '余额查询失败：$message';
+  }
 
   @override
   String get providerDetailPageVertexAiTitle => 'Vertex AI';
@@ -7484,6 +7860,13 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
       '在工具步骤下方显示摘要文本';
 
   @override
+  String get displaySettingsPageRegenerateDeleteTrailingMessagesTitle =>
+      '重新生成时删除下面的消息';
+
+  @override
+  String get displaySettingsPageShowRegenerateConfirmDialogTitle => '重新生成前弹出确认';
+
+  @override
   String chainOfThoughtExpandSteps(Object count) {
     return '展开更多 $count 步';
   }
@@ -7496,6 +7879,13 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get displaySettingsPageShowChatListDateSubtitle => '在左侧对话列表中显示日期分组标签';
+
+  @override
+  String get displaySettingsPageEnableImageCropperTitle => '启用图片裁剪';
+
+  @override
+  String get displaySettingsPageEnableImageCropperSubtitle =>
+      '从相册或相机选择图片后，允许裁剪图片';
 
   @override
   String get displaySettingsPageKeepSidebarOpenOnAssistantTapTitle =>
@@ -7920,6 +8310,28 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String get searchProviderBochaDescription =>
       '博查 AI 全网网页搜索，支持时间范围与摘要，更适合 AI 使用。';
+
+  @override
+  String get searchServiceNameSerper => 'Serper';
+
+  @override
+  String get searchProviderSerperDescription =>
+      'Serper Google 搜索 API。响应快速，支持国家/地区、语言、时间和页码过滤。';
+
+  @override
+  String get searchServicesDialogCountryOptional => '国家/地区（可选）';
+
+  @override
+  String get searchServicesDialogLanguageOptional => '语言（可选）';
+
+  @override
+  String get searchServicesDialogTimeFilterOptional => '时间过滤（可选）';
+
+  @override
+  String get searchServicesDialogPageOptional => '页码（可选）';
+
+  @override
+  String get searchServicesDialogPageInvalid => '页码必须是正整数。';
 
   @override
   String get generationInterrupted => '生成已中断';
@@ -8889,6 +9301,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get settingsPageAbout => '關於';
 
   @override
+  String get settingsPageStatistics => '統計';
+
+  @override
   String get settingsPageDocs => '使用文件';
 
   @override
@@ -8899,6 +9314,117 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get settingsPageShare => '分享';
+
+  @override
+  String get statsPageTitle => '統計';
+
+  @override
+  String get statsPageRangeAllTime => '全部';
+
+  @override
+  String get statsPageRangeLast30Days => '最近 30 天';
+
+  @override
+  String get statsPageRangePreviousMonth => '上個月';
+
+  @override
+  String get statsPageRangePreviousQuarter => '上個季度';
+
+  @override
+  String get statsPageRangeCustom => '自訂';
+
+  @override
+  String get statsPageHeatmapTitle => '聊天熱力圖';
+
+  @override
+  String get statsPageHeatmapLess => '少';
+
+  @override
+  String get statsPageHeatmapMore => '多';
+
+  @override
+  String get statsPageSummaryTitle => '總覽';
+
+  @override
+  String get statsPageTotalConversations => '總對話數';
+
+  @override
+  String get statsPageTotalMessages => '總消息數';
+
+  @override
+  String get statsPageInputTokens => '輸入 Tokens';
+
+  @override
+  String get statsPageOutputTokens => '輸出 Tokens';
+
+  @override
+  String get statsPageCachedTokens => '快取 Tokens';
+
+  @override
+  String get statsPageLaunchCount => '應用啟動次數';
+
+  @override
+  String get statsPageUsageTrendTitle => '用量趨勢';
+
+  @override
+  String get statsPageModelUsageTitle => '模型使用率';
+
+  @override
+  String get statsPageAssistantUsageTitle => '助手使用率';
+
+  @override
+  String get statsPageTopicVolumeTitle => '話題內容量';
+
+  @override
+  String get statsPageModelColumn => '模型';
+
+  @override
+  String get statsPageAssistantColumn => '助手';
+
+  @override
+  String get statsPageTopicColumn => '話題';
+
+  @override
+  String get statsPageMessagesColumn => '消息數';
+
+  @override
+  String get statsPageTopicsColumn => '話題數';
+
+  @override
+  String get statsPageEmptyTitle => '暫無統計資料';
+
+  @override
+  String get statsPageShowAllTooltip => '查看全部';
+
+  @override
+  String get statsPageClose => '關閉';
+
+  @override
+  String get statsPageUnknownProvider => '未知供應商';
+
+  @override
+  String get statsPageUnknownAssistant => '預設助手';
+
+  @override
+  String get statsPageUnknownModel => '未知模型';
+
+  @override
+  String get statsPageUnknownTopic => '未命名話題';
+
+  @override
+  String get statsPageCustomRangeTitle => '自訂時間段';
+
+  @override
+  String get statsPageCustomRangeStart => '開始';
+
+  @override
+  String get statsPageCustomRangeEnd => '結束';
+
+  @override
+  String get statsPageCustomRangeCancel => '取消';
+
+  @override
+  String get statsPageCustomRangeApply => '套用';
 
   @override
   String get sponsorPageMethodsSectionTitle => '贊助方式';
@@ -9654,6 +10180,18 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get codeBlockPreviewButton => '預覽';
 
   @override
+  String get codeBlockSaveAsButton => '另存為檔案';
+
+  @override
+  String get codeBlockCollapseButton => '摺疊';
+
+  @override
+  String get codeBlockExpandButton => '展開';
+
+  @override
+  String get codeBlockDefaultFileNameStem => '程式碼';
+
+  @override
   String codeBlockCollapsedLines(int n) {
     return '… 已摺疊 $n 行';
   }
@@ -10228,6 +10766,10 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
       '重新生成只會更新目前訊息，不會刪除下面的訊息。確定要繼續嗎？';
 
   @override
+  String get chatMessageWidgetRegenerateConfirmDeleteTrailingContent =>
+      '重新生成將會刪除此訊息下面的所有訊息，且無法復原。確定要繼續嗎？';
+
+  @override
   String get chatMessageWidgetRegenerateConfirmCancel => '取消';
 
   @override
@@ -10615,6 +11157,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get chatInputBarMoreTooltip => '更多';
+
+  @override
+  String get chatInputBarImageMode => '繪圖模式';
+
+  @override
+  String get chatInputBarDisableImageModeTooltip => '關閉繪圖模式';
 
   @override
   String get chatInputBarQueuedPending => '排隊中';
@@ -11154,6 +11702,40 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String get providerDetailPageAihubmixAppCodeHelp =>
       '為請求附加 APP-Code，可享 10% 優惠，僅對 AIhubmix 生效。';
+
+  @override
+  String get providerDetailPageBalanceTitle => '帳戶餘額';
+
+  @override
+  String get providerDetailPageBalanceInfo => '取得帳戶餘額';
+
+  @override
+  String get providerDetailPageBalanceApiPathLabel => '餘額 API 路徑';
+
+  @override
+  String get providerDetailPageBalanceResultPathLabel => '結果 JSON 路徑';
+
+  @override
+  String get providerDetailPageBalanceQueryButton => '查詢餘額';
+
+  @override
+  String get providerDetailPageBalanceQuerying => '查詢中...';
+
+  @override
+  String get providerDetailPageBalanceResetDefaultsButton => '重設';
+
+  @override
+  String get providerDetailPageBalanceResetDefaultsTooltip => '重設餘額設定';
+
+  @override
+  String providerDetailPageBalanceResult(String value) {
+    return '餘額：$value';
+  }
+
+  @override
+  String providerDetailPageBalanceError(String message) {
+    return '餘額查詢失敗：$message';
+  }
 
   @override
   String get providerDetailPageVertexAiTitle => 'Vertex AI';
@@ -11800,6 +12382,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
       '在工具步驟下方顯示摘要文字';
 
   @override
+  String get displaySettingsPageRegenerateDeleteTrailingMessagesTitle =>
+      '重新生成時刪除下面的訊息';
+
+  @override
+  String get displaySettingsPageShowRegenerateConfirmDialogTitle => '重新生成前彈出確認';
+
+  @override
   String chainOfThoughtExpandSteps(Object count) {
     return '展開更多 $count 步';
   }
@@ -11812,6 +12401,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get displaySettingsPageShowChatListDateSubtitle => '在左側對話列表中顯示日期分組標籤';
+
+  @override
+  String get displaySettingsPageEnableImageCropperTitle => '啟用圖片裁剪';
+
+  @override
+  String get displaySettingsPageEnableImageCropperSubtitle =>
+      '從相簿或相機選擇圖片後，允許裁剪圖片';
 
   @override
   String get displaySettingsPageKeepSidebarOpenOnAssistantTapTitle =>
@@ -12237,6 +12833,28 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String get searchProviderBochaDescription =>
       '博查 AI 全網網頁搜尋，支援時間範圍與摘要，更適合 AI 使用。';
+
+  @override
+  String get searchServiceNameSerper => 'Serper';
+
+  @override
+  String get searchProviderSerperDescription =>
+      'Serper Google 搜尋 API。回應快速，支援國家/地區、語言、時間和頁碼過濾。';
+
+  @override
+  String get searchServicesDialogCountryOptional => '國家/地區（可選）';
+
+  @override
+  String get searchServicesDialogLanguageOptional => '語言（可選）';
+
+  @override
+  String get searchServicesDialogTimeFilterOptional => '時間過濾（可選）';
+
+  @override
+  String get searchServicesDialogPageOptional => '頁碼（可選）';
+
+  @override
+  String get searchServicesDialogPageInvalid => '頁碼必須是正整數。';
 
   @override
   String get generationInterrupted => '生成已中斷';

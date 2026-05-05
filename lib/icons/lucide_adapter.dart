@@ -18,6 +18,8 @@ class Lucide {
   static const IconData ArrowLeft = lucide.LucideIcons.arrowLeft;
   static const IconData Camera = lucide.LucideIcons.camera;
   static const IconData Image = lucide.LucideIcons.image;
+  static const IconData Brush = lucide.LucideIcons.brush;
+  static const IconData Crop = lucide.LucideIcons.crop;
   static const IconData Upload = lucide.LucideIcons.upload;
   static const IconData Bot = lucide.LucideIcons.bot;
   static const IconData History = lucide.LucideIcons.history;
@@ -70,7 +72,7 @@ class Lucide {
   static const IconData MessageCircle = lucide.LucideIcons.messageCircle;
   static const IconData NotebookTabs = lucide.LucideIcons.notebookTabs;
   static const IconData Vibrate = lucide.LucideIcons.vibrate;
-  static const IconData TextSelect = lucide.LucideIcons.squareDashedText;
+  static const IconData TextSelect = lucide.LucideIcons.textCursorInput;
   static const IconData BookOpenText = lucide.LucideIcons.bookOpenText;
   static const IconData Pencil = lucide.LucideIcons.pencil;
   static const IconData GitFork = lucide.LucideIcons.gitFork;
@@ -156,6 +158,8 @@ class Lucide {
   static const IconData ChevronsUp = lucide.LucideIcons.chevronsUp;
   static const IconData ChevronsDown = lucide.LucideIcons.chevronsDown;
   static const IconData Timer = lucide.LucideIcons.timer;
+  static const IconData ChartColumnBig = lucide.LucideIcons.chartColumnBig;
+  static const IconData Maximize = lucide.LucideIcons.maximize;
   static const IconData Maximize2 = lucide.LucideIcons.maximize2;
   static const IconData FolderOpen = lucide.LucideIcons.folderOpen;
   static const IconData FileQuestion = lucide.LucideIcons.fileQuestionMark;
@@ -165,4 +169,6 @@ class Lucide {
   static const IconData package2 = lucide.LucideIcons.package2;
   static const IconData workflow = lucide.LucideIcons.workflow;
   static const IconData clock = lucide.LucideIcons.clock;
+  static const IconData Wallet = lucide.LucideIcons.walletMinimal;
+  static const IconData Coins = lucide.LucideIcons.coins;
 }

@@ -74,6 +74,8 @@ class _DisplaySettingsBody extends StatelessWidget {
                   _RowDivider(),
                   _ToggleRowShowModelTimestamp(),
                   _RowDivider(),
+                  _ToggleRowShowProviderInChatMessage(),
+                  _RowDivider(),
                   _ToggleRowShowTokenStats(),
                 ],
               ),
@@ -106,11 +108,17 @@ class _DisplaySettingsBody extends StatelessWidget {
                   _RowDivider(),
                   _ToggleRowShowToolResultSummary(),
                   _RowDivider(),
+                  _ToggleRowRegenerateDeleteTrailingMessages(),
+                  _RowDivider(),
+                  _ToggleRowShowRegenerateConfirmDialog(),
+                  _RowDivider(),
                   _ToggleRowShowUpdates(),
                   _RowDivider(),
                   _ToggleRowMsgNavButtons(),
                   _RowDivider(),
                   _ToggleRowShowChatListDate(),
+                  _RowDivider(),
+                  _ToggleRowImageCropper(),
                   _RowDivider(),
                   _ToggleRowNewChatOnAssistantSwitch(),
                   _RowDivider(),
@@ -2022,6 +2030,21 @@ class _ToggleRowShowModelTimestamp extends StatelessWidget {
   }
 }
 
+class _ToggleRowShowProviderInChatMessage extends StatelessWidget {
+  const _ToggleRowShowProviderInChatMessage();
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final sp = context.watch<SettingsProvider>();
+    return _ToggleRow(
+      label: l10n.displaySettingsPageShowProviderInChatMessageTitle,
+      value: sp.showProviderInChatMessage,
+      onChanged: (v) =>
+          context.read<SettingsProvider>().setShowProviderInChatMessage(v),
+    );
+  }
+}
+
 class _ToggleRowShowTokenStats extends StatelessWidget {
   const _ToggleRowShowTokenStats();
   @override
@@ -2186,6 +2209,37 @@ class _ToggleRowShowToolResultSummary extends StatelessWidget {
   }
 }
 
+class _ToggleRowRegenerateDeleteTrailingMessages extends StatelessWidget {
+  const _ToggleRowRegenerateDeleteTrailingMessages();
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final sp = context.watch<SettingsProvider>();
+    return _ToggleRow(
+      label: l10n.displaySettingsPageRegenerateDeleteTrailingMessagesTitle,
+      value: sp.regenerateDeleteTrailingMessages,
+      onChanged: (v) => context
+          .read<SettingsProvider>()
+          .setRegenerateDeleteTrailingMessages(v),
+    );
+  }
+}
+
+class _ToggleRowShowRegenerateConfirmDialog extends StatelessWidget {
+  const _ToggleRowShowRegenerateConfirmDialog();
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final sp = context.watch<SettingsProvider>();
+    return _ToggleRow(
+      label: l10n.displaySettingsPageShowRegenerateConfirmDialogTitle,
+      value: sp.showRegenerateConfirmDialog,
+      onChanged: (v) =>
+          context.read<SettingsProvider>().setShowRegenerateConfirmDialog(v),
+    );
+  }
+}
+
 class _ToggleRowAutoScrollEnabled extends StatelessWidget {
   const _ToggleRowAutoScrollEnabled();
   @override
@@ -2197,6 +2251,22 @@ class _ToggleRowAutoScrollEnabled extends StatelessWidget {
       value: sp.autoScrollEnabled,
       onChanged: (v) =>
           context.read<SettingsProvider>().setAutoScrollEnabled(v),
+    );
+  }
+}
+
+class _ToggleRowImageCropper extends StatelessWidget {
+  const _ToggleRowImageCropper();
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final sp = context.watch<SettingsProvider>();
+    return _ToggleRow(
+      label: l10n.displaySettingsPageEnableImageCropperTitle,
+      subtitle: l10n.displaySettingsPageEnableImageCropperSubtitle,
+      value: sp.imageCropperEnabled,
+      onChanged: (v) =>
+          context.read<SettingsProvider>().setImageCropperEnabled(v),
     );
   }
 }
@@ -2435,10 +2505,12 @@ class _ToggleRowNewChatOnLaunch extends StatelessWidget {
 class _ToggleRow extends StatelessWidget {
   const _ToggleRow({
     required this.label,
+    this.subtitle,
     required this.value,
     required this.onChanged,
   });
   final String label;
+  final String? subtitle;
   final bool value;
   final ValueChanged<bool>? onChanged;
   @override
@@ -2449,17 +2521,37 @@ class _ToggleRow extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              label,
-              // Reduce toggle row label size to 14 to match other panes
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                color: cs.onSurface.withValues(alpha: 0.9),
-                decoration: TextDecoration.none,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  // Reduce toggle row label size to 14 to match other panes
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: cs.onSurface.withValues(alpha: 0.9),
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+                if (subtitle != null && subtitle!.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.25,
+                      color: cs.onSurface.withValues(alpha: 0.58),
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
+          const SizedBox(width: 12),
           IosSwitch(value: value, onChanged: onChanged),
         ],
       ),

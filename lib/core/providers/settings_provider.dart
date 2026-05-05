@@ -105,6 +105,10 @@ class SettingsProvider extends ChangeNotifier {
       'display_collapse_thinking_steps_v1';
   static const String _displayShowToolResultSummaryKey =
       'display_show_tool_result_summary_v1';
+  static const String _displayRegenerateDeleteTrailingMessagesKey =
+      'display_regenerate_delete_trailing_messages_v1';
+  static const String _displayShowRegenerateConfirmDialogKey =
+      'display_show_regenerate_confirm_dialog_v1';
   static const String _displayShowMessageNavKey = 'display_show_message_nav_v1';
   static const String _displayUseNewAssistantAvatarUxKey =
       'display_use_new_assistant_avatar_ux_v1';
@@ -159,6 +163,7 @@ class SettingsProvider extends ChangeNotifier {
       'display_enable_assistant_markdown_v1';
   static const String _displayShowChatListDateKey =
       'display_show_chat_list_date_v1';
+  static const String _imageCropperEnabledKey = 'image_cropper_enabled_v1';
   static const String _displayMobileCodeBlockWrapKey =
       'display_mobile_code_block_wrap_v1';
   static const String _displayAutoCollapseCodeBlockKey =
@@ -183,6 +188,7 @@ class SettingsProvider extends ChangeNotifier {
   static const String _logSaveOutputKey = 'log_save_output_v1';
   static const String _logAutoDeleteDaysKey = 'log_auto_delete_days_v1';
   static const String _logMaxSizeMBKey = 'log_max_size_mb_v1';
+  static const String _appLaunchCountKey = 'app_launch_count_v1';
   // Desktop topic panel placement + right sidebar open state
   static const String _desktopTopicPositionKey = 'desktop_topic_position_v1';
   static const String _desktopRightSidebarOpenKey =
@@ -402,6 +408,9 @@ class SettingsProvider extends ChangeNotifier {
   String get globalProxyUsername => _globalProxyUsername;
   String get globalProxyPassword => _globalProxyPassword;
   String get globalProxyBypass => _globalProxyBypass;
+
+  int _appLaunchCount = 0;
+  int get appLaunchCount => _appLaunchCount;
 
   SettingsProvider() {
     _load();
@@ -760,6 +769,10 @@ class SettingsProvider extends ChangeNotifier {
         prefs.getBool(_displayCollapseThinkingStepsKey) ?? false;
     _showToolResultSummary =
         prefs.getBool(_displayShowToolResultSummaryKey) ?? false;
+    _regenerateDeleteTrailingMessages =
+        prefs.getBool(_displayRegenerateDeleteTrailingMessagesKey) ?? false;
+    _showRegenerateConfirmDialog =
+        prefs.getBool(_displayShowRegenerateConfirmDialogKey) ?? true;
     _showMessageNavButtons = prefs.getBool(_displayShowMessageNavKey) ?? true;
     _useNewAssistantAvatarUx =
         prefs.getBool(_displayUseNewAssistantAvatarUxKey) ?? false;
@@ -793,6 +806,7 @@ class SettingsProvider extends ChangeNotifier {
     RequestLogger.saveOutput = _logSaveOutput;
     _logAutoDeleteDays = prefs.getInt(_logAutoDeleteDaysKey) ?? 0;
     _logMaxSizeMB = prefs.getInt(_logMaxSizeMBKey) ?? 0;
+    _appLaunchCount = prefs.getInt(_appLaunchCountKey) ?? 0;
     // Run log cleanup based on current settings
     RequestLogger.cleanupLogs(
       autoDeleteDays: _logAutoDeleteDays,
@@ -845,6 +859,7 @@ class SettingsProvider extends ChangeNotifier {
     _enableAssistantMarkdown =
         prefs.getBool(_displayEnableAssistantMarkdownKey) ?? true;
     _showChatListDate = prefs.getBool(_displayShowChatListDateKey) ?? false;
+    _imageCropperEnabled = prefs.getBool(_imageCropperEnabledKey) ?? false;
     _mobileCodeBlockWrap =
         prefs.getBool(_displayMobileCodeBlockWrapKey) ?? false;
     _autoCollapseCodeBlock =
@@ -2809,6 +2824,27 @@ DO NOT GIVE ANSWERS OR DO HOMEWORK FOR THE USER. If the user asks a math or logi
     await prefs.setBool(_displayShowToolResultSummaryKey, v);
   }
 
+  bool _regenerateDeleteTrailingMessages = false;
+  bool get regenerateDeleteTrailingMessages =>
+      _regenerateDeleteTrailingMessages;
+  Future<void> setRegenerateDeleteTrailingMessages(bool v) async {
+    if (_regenerateDeleteTrailingMessages == v) return;
+    _regenerateDeleteTrailingMessages = v;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_displayRegenerateDeleteTrailingMessagesKey, v);
+  }
+
+  bool _showRegenerateConfirmDialog = true;
+  bool get showRegenerateConfirmDialog => _showRegenerateConfirmDialog;
+  Future<void> setShowRegenerateConfirmDialog(bool v) async {
+    if (_showRegenerateConfirmDialog == v) return;
+    _showRegenerateConfirmDialog = v;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_displayShowRegenerateConfirmDialogKey, v);
+  }
+
   // Display: show message navigation button
   bool _showMessageNavButtons = true;
   bool get showMessageNavButtons => _showMessageNavButtons;
@@ -3028,6 +3064,17 @@ DO NOT GIVE ANSWERS OR DO HOMEWORK FOR THE USER. If the user asks a math or logi
     await prefs.setBool(_displayShowChatListDateKey, v);
   }
 
+  // Display: crop images after selecting from gallery or camera
+  bool _imageCropperEnabled = false;
+  bool get imageCropperEnabled => _imageCropperEnabled;
+  Future<void> setImageCropperEnabled(bool v) async {
+    if (_imageCropperEnabled == v) return;
+    _imageCropperEnabled = v;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_imageCropperEnabledKey, v);
+  }
+
   // Display: mobile code block word wrap
   bool _mobileCodeBlockWrap = false;
   bool get mobileCodeBlockWrap => _mobileCodeBlockWrap;
@@ -3243,6 +3290,14 @@ DO NOT GIVE ANSWERS OR DO HOMEWORK FOR THE USER. If the user asks a math or logi
     await FlutterLogger.setEnabled(v);
   }
 
+  Future<void> incrementAppLaunchCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    final next = (prefs.getInt(_appLaunchCountKey) ?? _appLaunchCount) + 1;
+    _appLaunchCount = next;
+    await prefs.setInt(_appLaunchCountKey, next);
+    notifyListeners();
+  }
+
   // Log settings: save output
   bool _logSaveOutput = true;
   bool get logSaveOutput => _logSaveOutput;
@@ -3393,6 +3448,8 @@ DO NOT GIVE ANSWERS OR DO HOMEWORK FOR THE USER. If the user asks a math or logi
     copy._autoCollapseThinking = _autoCollapseThinking;
     copy._collapseThinkingSteps = _collapseThinkingSteps;
     copy._showToolResultSummary = _showToolResultSummary;
+    copy._regenerateDeleteTrailingMessages = _regenerateDeleteTrailingMessages;
+    copy._showRegenerateConfirmDialog = _showRegenerateConfirmDialog;
     copy._showMessageNavButtons = _showMessageNavButtons;
     copy._useNewAssistantAvatarUx = _useNewAssistantAvatarUx;
     copy._showProviderInModelCapsule = _showProviderInModelCapsule;
@@ -3413,6 +3470,7 @@ DO NOT GIVE ANSWERS OR DO HOMEWORK FOR THE USER. If the user asks a math or logi
     copy._logSaveOutput = _logSaveOutput;
     copy._logAutoDeleteDays = _logAutoDeleteDays;
     copy._logMaxSizeMB = _logMaxSizeMB;
+    copy._appLaunchCount = _appLaunchCount;
     copy._newChatOnLaunch = _newChatOnLaunch;
     copy._newChatOnAssistantSwitch = _newChatOnAssistantSwitch;
     copy._newChatAfterDelete = _newChatAfterDelete;
@@ -3686,6 +3744,10 @@ class ProviderConfig {
   final KeyManagementConfig? keyManagement;
   // AIhubmix promo header opt-in
   final bool? aihubmixAppCodeEnabled;
+  // OpenAI-compatible provider account balance query.
+  final bool? balanceEnabled;
+  final String? balanceApiPath;
+  final String? balanceResultPath;
 
   static String resolveProxyType(String? value) {
     switch (value?.trim().toLowerCase()) {
@@ -3724,6 +3786,9 @@ class ProviderConfig {
     this.apiKeys,
     this.keyManagement,
     this.aihubmixAppCodeEnabled,
+    this.balanceEnabled,
+    this.balanceApiPath,
+    this.balanceResultPath,
   });
 
   // Sentinel for copyWith nullability control (allow explicit null set)
@@ -3756,6 +3821,9 @@ class ProviderConfig {
     List<ApiKeyConfig>? apiKeys,
     KeyManagementConfig? keyManagement,
     bool? aihubmixAppCodeEnabled,
+    bool? balanceEnabled,
+    String? balanceApiPath,
+    String? balanceResultPath,
   }) => ProviderConfig(
     id: id ?? this.id,
     enabled: enabled ?? this.enabled,
@@ -3788,6 +3856,9 @@ class ProviderConfig {
     keyManagement: keyManagement ?? this.keyManagement,
     aihubmixAppCodeEnabled:
         aihubmixAppCodeEnabled ?? this.aihubmixAppCodeEnabled,
+    balanceEnabled: balanceEnabled ?? this.balanceEnabled,
+    balanceApiPath: balanceApiPath ?? this.balanceApiPath,
+    balanceResultPath: balanceResultPath ?? this.balanceResultPath,
   );
 
   Map<String, dynamic> toJson() => {
@@ -3817,6 +3888,9 @@ class ProviderConfig {
     'apiKeys': apiKeys?.map((e) => e.toJson()).toList(),
     'keyManagement': keyManagement?.toJson(),
     'aihubmixAppCodeEnabled': aihubmixAppCodeEnabled,
+    'balanceEnabled': balanceEnabled,
+    'balanceApiPath': balanceApiPath,
+    'balanceResultPath': balanceResultPath,
   };
 
   factory ProviderConfig.fromJson(Map<String, dynamic> json) => ProviderConfig(
@@ -3862,6 +3936,9 @@ class ProviderConfig {
       (json['keyManagement'] as Map?)?.cast<String, dynamic>(),
     ),
     aihubmixAppCodeEnabled: json['aihubmixAppCodeEnabled'] as bool?,
+    balanceEnabled: json['balanceEnabled'] as bool?,
+    balanceApiPath: json['balanceApiPath'] as String?,
+    balanceResultPath: json['balanceResultPath'] as String?,
   );
 
   static ProviderKind classify(String key, {ProviderKind? explicitType}) {
@@ -3890,6 +3967,9 @@ class ProviderConfig {
     }
     if (RegExp(r'bytedance|doubao|volces|ark').hasMatch(k)) {
       return 'https://ark.cn-beijing.volces.com/api/v3';
+    }
+    if (RegExp(r'kimi|moonshot|月之暗面').hasMatch(k)) {
+      return 'https://api.moonshot.cn/v1';
     }
     if (k.contains('silicon')) return 'https://api.siliconflow.cn/v1';
     if (k.contains('grok') || k.contains('x.ai') || k.contains('xai')) {
@@ -3946,6 +4026,9 @@ class ProviderConfig {
           apiKeys: const [],
           keyManagement: const KeyManagementConfig(),
           aihubmixAppCodeEnabled: false,
+          balanceEnabled: false,
+          balanceApiPath: '/credits',
+          balanceResultPath: 'data.total_usage',
         );
       case ProviderKind.claude:
         return ProviderConfig(
@@ -3966,6 +4049,9 @@ class ProviderConfig {
           apiKeys: const [],
           keyManagement: const KeyManagementConfig(),
           aihubmixAppCodeEnabled: false,
+          balanceEnabled: false,
+          balanceApiPath: '/credits',
+          balanceResultPath: 'data.total_usage',
         );
       case ProviderKind.openai:
         // Special-case KelivoIN default models and overrides
@@ -4014,6 +4100,9 @@ class ProviderConfig {
             apiKeys: const [],
             keyManagement: const KeyManagementConfig(),
             aihubmixAppCodeEnabled: false,
+            balanceEnabled: _defaultBalanceEnabled(key),
+            balanceApiPath: _defaultBalanceApiPath(key),
+            balanceResultPath: _defaultBalanceResultPath(key),
           );
         }
         // Special-case SiliconFlow: prefill two partnered models
@@ -4051,6 +4140,9 @@ class ProviderConfig {
             apiKeys: const [],
             keyManagement: const KeyManagementConfig(),
             aihubmixAppCodeEnabled: false,
+            balanceEnabled: _defaultBalanceEnabled(key),
+            balanceApiPath: _defaultBalanceApiPath(key),
+            balanceResultPath: _defaultBalanceResultPath(key),
           );
         }
         return ProviderConfig(
@@ -4073,7 +4165,48 @@ class ProviderConfig {
           apiKeys: const [],
           keyManagement: const KeyManagementConfig(),
           aihubmixAppCodeEnabled: lowerKey.contains('aihubmix'),
+          balanceEnabled: _defaultBalanceEnabled(key),
+          balanceApiPath: _defaultBalanceApiPath(key),
+          balanceResultPath: _defaultBalanceResultPath(key),
         );
     }
+  }
+
+  static String _defaultBalanceApiPath(String key) {
+    final k = key.toLowerCase();
+    if (k.contains('aihubmix')) return '/user/balance';
+    if (k.contains('deepseek')) return '/user/balance';
+    if (k.contains('openrouter')) return '/credits';
+    if (k.contains('vercel')) return '/credits';
+    if (k.contains('silicon')) return '/user/info';
+    if (RegExp(r'kimi|moonshot|月之暗面').hasMatch(k)) {
+      return '/users/me/balance';
+    }
+    return '/credits';
+  }
+
+  static String _defaultBalanceResultPath(String key) {
+    final k = key.toLowerCase();
+    if (k.contains('aihubmix')) return 'balance_infos[0].total_balance';
+    if (k.contains('deepseek')) return 'balance_infos[0].total_balance';
+    if (k.contains('openrouter')) {
+      return 'data.total_credits - data.total_usage';
+    }
+    if (k.contains('vercel')) return 'balance';
+    if (k.contains('silicon')) return 'data.totalBalance';
+    if (RegExp(r'kimi|moonshot|月之暗面').hasMatch(k)) {
+      return 'data.available_balance';
+    }
+    return 'data.total_usage';
+  }
+
+  static bool _defaultBalanceEnabled(String key) {
+    final k = key.toLowerCase();
+    return k.contains('aihubmix') ||
+        k.contains('deepseek') ||
+        k.contains('openrouter') ||
+        k.contains('vercel') ||
+        k.contains('silicon') ||
+        RegExp(r'kimi|moonshot|月之暗面').hasMatch(k);
   }
 }

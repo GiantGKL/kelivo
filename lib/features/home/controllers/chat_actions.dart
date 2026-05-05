@@ -368,6 +368,7 @@ class ChatActions {
         assistantMessage: assistantMessage,
         prepared: prepared,
         userImagePaths: userImagePaths,
+        allowImagesApiRouting: input.allowImagesApiRouting,
         providerKey: providerKey,
         modelId: modelId,
         assistant: assistant,
@@ -401,6 +402,7 @@ class ChatActions {
     required ChatMessage message,
     required Conversation conversation,
     bool assistantAsNewReply = false,
+    bool allowImagesApiRouting = true,
   }) async {
     // Avoid using BuildContext across async gaps (this class holds a BuildContext).
     final settings = contextProvider.read<SettingsProvider>();
@@ -456,6 +458,18 @@ class ChatActions {
       modelId: modelId,
     )) {
       return ChatActionResult.error('audio_attachment_unsupported');
+    }
+
+    if (settings.regenerateDeleteTrailingMessages) {
+      final removeIds = await messageGenerationService.removeTrailingMessages(
+        messages: _messages,
+        lastKeep: versioning.lastKeep,
+        targetGroupId: versioning.targetGroupId,
+      );
+      if (removeIds.isNotEmpty) {
+        _messages.removeWhere((message) => removeIds.contains(message.id));
+        onMessagesChanged?.call();
+      }
     }
 
     // Create assistant message placeholder (new version)
@@ -533,6 +547,7 @@ class ChatActions {
       assistantMessage: assistantMessage,
       prepared: prepared,
       userImagePaths: userImagePaths,
+      allowImagesApiRouting: allowImagesApiRouting,
       providerKey: providerKey,
       modelId: modelId,
       assistant: assistant,
@@ -657,6 +672,7 @@ class ChatActions {
         extraBody: ctx.extraBody,
         stream: ctx.streamOutput,
         requestId: conversationId,
+        allowImagesApiRouting: ctx.allowImagesApiRouting,
       );
 
       await _conversationStreams[conversationId]?.cancel();
@@ -786,6 +802,7 @@ class ChatActions {
             required String name,
             required Map<String, dynamic> arguments,
             String? content,
+            Map<String, dynamic>? metadata,
           }) async {
             await chatService.upsertToolEvent(
               messageId,
@@ -793,6 +810,7 @@ class ChatActions {
               name: name,
               arguments: arguments,
               content: content,
+              metadata: metadata,
             );
           },
     );

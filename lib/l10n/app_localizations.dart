@@ -544,6 +544,12 @@ abstract class AppLocalizations {
   /// **'About'**
   String get settingsPageAbout;
 
+  /// No description provided for @settingsPageStatistics.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get settingsPageStatistics;
+
   /// No description provided for @settingsPageDocs.
   ///
   /// In en, this message translates to:
@@ -567,6 +573,228 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Share'**
   String get settingsPageShare;
+
+  /// No description provided for @statsPageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get statsPageTitle;
+
+  /// No description provided for @statsPageRangeAllTime.
+  ///
+  /// In en, this message translates to:
+  /// **'All Time'**
+  String get statsPageRangeAllTime;
+
+  /// No description provided for @statsPageRangeLast30Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 30 Days'**
+  String get statsPageRangeLast30Days;
+
+  /// No description provided for @statsPageRangePreviousMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Month'**
+  String get statsPageRangePreviousMonth;
+
+  /// No description provided for @statsPageRangePreviousQuarter.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Quarter'**
+  String get statsPageRangePreviousQuarter;
+
+  /// No description provided for @statsPageRangeCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get statsPageRangeCustom;
+
+  /// No description provided for @statsPageHeatmapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat Heatmap'**
+  String get statsPageHeatmapTitle;
+
+  /// No description provided for @statsPageHeatmapLess.
+  ///
+  /// In en, this message translates to:
+  /// **'Less'**
+  String get statsPageHeatmapLess;
+
+  /// No description provided for @statsPageHeatmapMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get statsPageHeatmapMore;
+
+  /// No description provided for @statsPageSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get statsPageSummaryTitle;
+
+  /// No description provided for @statsPageTotalConversations.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Conversations'**
+  String get statsPageTotalConversations;
+
+  /// No description provided for @statsPageTotalMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Messages'**
+  String get statsPageTotalMessages;
+
+  /// No description provided for @statsPageInputTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Input Tokens'**
+  String get statsPageInputTokens;
+
+  /// No description provided for @statsPageOutputTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Output Tokens'**
+  String get statsPageOutputTokens;
+
+  /// No description provided for @statsPageCachedTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Cached Tokens'**
+  String get statsPageCachedTokens;
+
+  /// No description provided for @statsPageLaunchCount.
+  ///
+  /// In en, this message translates to:
+  /// **'App Launches'**
+  String get statsPageLaunchCount;
+
+  /// No description provided for @statsPageUsageTrendTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage Trend'**
+  String get statsPageUsageTrendTitle;
+
+  /// No description provided for @statsPageModelUsageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Model Usage'**
+  String get statsPageModelUsageTitle;
+
+  /// No description provided for @statsPageAssistantUsageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant Usage'**
+  String get statsPageAssistantUsageTitle;
+
+  /// No description provided for @statsPageTopicVolumeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Topic Volume'**
+  String get statsPageTopicVolumeTitle;
+
+  /// No description provided for @statsPageModelColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get statsPageModelColumn;
+
+  /// No description provided for @statsPageAssistantColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant'**
+  String get statsPageAssistantColumn;
+
+  /// No description provided for @statsPageTopicColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Topic'**
+  String get statsPageTopicColumn;
+
+  /// No description provided for @statsPageMessagesColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get statsPageMessagesColumn;
+
+  /// No description provided for @statsPageTopicsColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Topics'**
+  String get statsPageTopicsColumn;
+
+  /// No description provided for @statsPageEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No statistics yet'**
+  String get statsPageEmptyTitle;
+
+  /// No description provided for @statsPageShowAllTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all'**
+  String get statsPageShowAllTooltip;
+
+  /// No description provided for @statsPageClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get statsPageClose;
+
+  /// No description provided for @statsPageUnknownProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown Provider'**
+  String get statsPageUnknownProvider;
+
+  /// No description provided for @statsPageUnknownAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Default Assistant'**
+  String get statsPageUnknownAssistant;
+
+  /// No description provided for @statsPageUnknownModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown Model'**
+  String get statsPageUnknownModel;
+
+  /// No description provided for @statsPageUnknownTopic.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled Topic'**
+  String get statsPageUnknownTopic;
+
+  /// No description provided for @statsPageCustomRangeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Range'**
+  String get statsPageCustomRangeTitle;
+
+  /// No description provided for @statsPageCustomRangeStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get statsPageCustomRangeStart;
+
+  /// No description provided for @statsPageCustomRangeEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get statsPageCustomRangeEnd;
+
+  /// No description provided for @statsPageCustomRangeCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get statsPageCustomRangeCancel;
+
+  /// No description provided for @statsPageCustomRangeApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get statsPageCustomRangeApply;
 
   /// No description provided for @sponsorPageMethodsSectionTitle.
   ///
@@ -2045,6 +2273,30 @@ abstract class AppLocalizations {
   /// **'Preview'**
   String get codeBlockPreviewButton;
 
+  /// No description provided for @codeBlockSaveAsButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as file'**
+  String get codeBlockSaveAsButton;
+
+  /// No description provided for @codeBlockCollapseButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse'**
+  String get codeBlockCollapseButton;
+
+  /// No description provided for @codeBlockExpandButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand'**
+  String get codeBlockExpandButton;
+
+  /// No description provided for @codeBlockDefaultFileNameStem.
+  ///
+  /// In en, this message translates to:
+  /// **'code'**
+  String get codeBlockDefaultFileNameStem;
+
   /// No description provided for @codeBlockCollapsedLines.
   ///
   /// In en, this message translates to:
@@ -3155,6 +3407,12 @@ abstract class AppLocalizations {
   /// **'Regenerating only updates this message and keeps the messages below it. Continue?'**
   String get chatMessageWidgetRegenerateConfirmContent;
 
+  /// No description provided for @chatMessageWidgetRegenerateConfirmDeleteTrailingContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Regenerating will delete all messages below this message and cannot be undone. Continue?'**
+  String get chatMessageWidgetRegenerateConfirmDeleteTrailingContent;
+
   /// No description provided for @chatMessageWidgetRegenerateConfirmCancel.
   ///
   /// In en, this message translates to:
@@ -3874,6 +4132,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add'**
   String get chatInputBarMoreTooltip;
+
+  /// No description provided for @chatInputBarImageMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Image mode'**
+  String get chatInputBarImageMode;
+
+  /// No description provided for @chatInputBarDisableImageModeTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off image mode'**
+  String get chatInputBarDisableImageModeTooltip;
 
   /// No description provided for @chatInputBarQueuedPending.
   ///
@@ -4897,6 +5167,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Adds header APP-Code requests to get a 10% discount. Only affects AIhubmix.'**
   String get providerDetailPageAihubmixAppCodeHelp;
+
+  /// No description provided for @providerDetailPageBalanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account Balance'**
+  String get providerDetailPageBalanceTitle;
+
+  /// No description provided for @providerDetailPageBalanceInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Get account balance'**
+  String get providerDetailPageBalanceInfo;
+
+  /// No description provided for @providerDetailPageBalanceApiPathLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance API Path'**
+  String get providerDetailPageBalanceApiPathLabel;
+
+  /// No description provided for @providerDetailPageBalanceResultPathLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Result JSON Path'**
+  String get providerDetailPageBalanceResultPathLabel;
+
+  /// No description provided for @providerDetailPageBalanceQueryButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Check Balance'**
+  String get providerDetailPageBalanceQueryButton;
+
+  /// No description provided for @providerDetailPageBalanceQuerying.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking...'**
+  String get providerDetailPageBalanceQuerying;
+
+  /// No description provided for @providerDetailPageBalanceResetDefaultsButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get providerDetailPageBalanceResetDefaultsButton;
+
+  /// No description provided for @providerDetailPageBalanceResetDefaultsTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset balance settings'**
+  String get providerDetailPageBalanceResetDefaultsTooltip;
+
+  /// No description provided for @providerDetailPageBalanceResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance: {value}'**
+  String providerDetailPageBalanceResult(String value);
+
+  /// No description provided for @providerDetailPageBalanceError.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance query failed: {message}'**
+  String providerDetailPageBalanceError(String message);
 
   /// No description provided for @providerDetailPageVertexAiTitle.
   ///
@@ -6152,6 +6482,18 @@ abstract class AppLocalizations {
   /// **'Display the summary text below tool steps'**
   String get displaySettingsPageShowToolResultSummarySubtitle;
 
+  /// No description provided for @displaySettingsPageRegenerateDeleteTrailingMessagesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete messages below when regenerating'**
+  String get displaySettingsPageRegenerateDeleteTrailingMessagesTitle;
+
+  /// No description provided for @displaySettingsPageShowRegenerateConfirmDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm before regenerating'**
+  String get displaySettingsPageShowRegenerateConfirmDialogTitle;
+
   /// No description provided for @chainOfThoughtExpandSteps.
   ///
   /// In en, this message translates to:
@@ -6175,6 +6517,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Display date group labels in the conversation list'**
   String get displaySettingsPageShowChatListDateSubtitle;
+
+  /// No description provided for @displaySettingsPageEnableImageCropperTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Image Cropping'**
+  String get displaySettingsPageEnableImageCropperTitle;
+
+  /// No description provided for @displaySettingsPageEnableImageCropperSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop images after selecting from gallery or camera'**
+  String get displaySettingsPageEnableImageCropperSubtitle;
 
   /// No description provided for @displaySettingsPageKeepSidebarOpenOnAssistantTapTitle.
   ///
@@ -6985,6 +7339,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bocha web search API. Accurate web results with optional summaries.'**
   String get searchProviderBochaDescription;
+
+  /// No description provided for @searchServiceNameSerper.
+  ///
+  /// In en, this message translates to:
+  /// **'Serper'**
+  String get searchServiceNameSerper;
+
+  /// No description provided for @searchProviderSerperDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Serper Google Search API. Fast web results with optional country, language, time, and page filters.'**
+  String get searchProviderSerperDescription;
+
+  /// No description provided for @searchServicesDialogCountryOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Country/region (optional)'**
+  String get searchServicesDialogCountryOptional;
+
+  /// No description provided for @searchServicesDialogLanguageOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Language (optional)'**
+  String get searchServicesDialogLanguageOptional;
+
+  /// No description provided for @searchServicesDialogTimeFilterOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Time filter (optional)'**
+  String get searchServicesDialogTimeFilterOptional;
+
+  /// No description provided for @searchServicesDialogPageOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Page (optional)'**
+  String get searchServicesDialogPageOptional;
+
+  /// No description provided for @searchServicesDialogPageInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Page must be a positive integer.'**
+  String get searchServicesDialogPageInvalid;
 
   /// No description provided for @generationInterrupted.
   ///

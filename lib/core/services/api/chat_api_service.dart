@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/model_provider.dart';
 import '../../models/token_usage.dart';
@@ -26,6 +27,7 @@ import '../../utils/multimodal_input_utils.dart';
 part 'chat_api_service_shims.dart';
 part 'providers/openai_common.dart';
 part 'providers/openai_chat_completions.dart';
+part 'providers/openai_images.dart';
 part 'providers/openai_responses.dart';
 part 'providers/google_common.dart';
 part 'providers/google_gemini.dart';
@@ -36,6 +38,18 @@ class ChatApiService {
   static const String _aihubmixAppCode = 'ZKRT3588';
   static final Map<String, CancelToken> _activeCancelTokens =
       <String, CancelToken>{};
+
+  static bool supportsOpenAIImagesApiRouting(
+    ProviderConfig config,
+    String modelId,
+  ) {
+    final kind = ProviderConfig.classify(
+      config.id,
+      explicitType: config.providerType,
+    );
+    return kind == ProviderKind.openai &&
+        _shouldUseOpenAIImagesApi(config, modelId);
+  }
 
   static void cancelRequest(String requestId) {
     final key = requestId.trim();
@@ -381,6 +395,7 @@ class ChatApiService {
     Map<String, dynamic>? extraBody,
     bool stream = true,
     String? requestId,
+    bool allowImagesApiRouting = true,
   }) async* {
     final kind = ProviderConfig.classify(
       config.id,
@@ -400,7 +415,18 @@ class ChatApiService {
 
     try {
       if (kind == ProviderKind.openai) {
-        if (config.useResponseApi == true) {
+        if (allowImagesApiRouting &&
+            _shouldUseOpenAIImagesApi(config, modelId)) {
+          yield* _sendOpenAIImagesStream(
+            client,
+            config,
+            modelId,
+            safeMessages,
+            userImagePaths: userImagePaths,
+            extraHeaders: extraHeaders,
+            extraBody: extraBody,
+          );
+        } else if (config.useResponseApi == true) {
           yield* _sendOpenAIResponsesStream(
             client,
             config,
@@ -1209,7 +1235,13 @@ class ToolCallInfo {
   final String id;
   final String name;
   final Map<String, dynamic> arguments;
-  ToolCallInfo({required this.id, required this.name, required this.arguments});
+  final Map<String, dynamic>? metadata;
+  ToolCallInfo({
+    required this.id,
+    required this.name,
+    required this.arguments,
+    this.metadata,
+  });
 }
 
 class ToolResultInfo {
@@ -1217,10 +1249,12 @@ class ToolResultInfo {
   final String name;
   final Map<String, dynamic> arguments;
   final String content;
+  final Map<String, dynamic>? metadata;
   ToolResultInfo({
     required this.id,
     required this.name,
     required this.arguments,
     required this.content,
+    this.metadata,
   });
 }

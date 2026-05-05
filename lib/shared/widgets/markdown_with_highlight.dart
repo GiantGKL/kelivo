@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:gpt_markdown/custom_widgets/markdown_config.dart'
     show GptMarkdownConfig;
 import 'package:flutter_highlight/themes/github.dart';
 import 'package:flutter_highlight/themes/atom-one-dark-reasonable.dart';
-import 'package:highlight/highlight_core.dart' show Node, highlight;
+import 'package:highlight/highlight.dart' show Node, highlight;
 import '../../icons/lucide_adapter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
@@ -17,14 +17,17 @@ import '../../utils/sandbox_path_resolver.dart';
 import '../../features/chat/pages/image_viewer_page.dart';
 import '../../features/chat/pages/html_preview_page.dart';
 import 'snackbar.dart';
+import 'ios_tactile.dart';
 import 'mermaid_bridge.dart';
 import 'export_capture_scope.dart';
 import 'mermaid_image_cache.dart';
 import 'plantuml_block.dart';
+import 'package:path/path.dart' as p;
 import 'package:Kelivo/l10n/app_localizations.dart';
 import 'package:Kelivo/theme/theme_factory.dart' show getPlatformFontFallback;
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 import '../../core/providers/settings_provider.dart';
 import 'package:Kelivo/desktop/html_preview_dialog.dart';
 
@@ -72,6 +75,7 @@ class MarkdownWithCodeHighlight extends StatelessWidget {
     final components = List<MarkdownComponent>.from(
       MarkdownComponent.globalComponents,
     );
+    components.removeWhere((c) => c is LatexMathMultiLine);
     final hrIdx = components.indexWhere((c) => c is HrLine);
     if (hrIdx != -1) components[hrIdx] = SoftHrLine();
     final bqIdx = components.indexWhere((c) => c is BlockQuote);
@@ -96,11 +100,17 @@ class MarkdownWithCodeHighlight extends StatelessWidget {
     // Ensure fenced code blocks take precedence over headings and other blocks
     // so lines like "# comment" inside code fences are not parsed as headings.
     components.insert(0, FencedCodeBlockMd());
+    // HTML details may contain fenced code blocks, so it must be checked first.
+    components.insert(0, DetailsHtmlMd());
     // Inline components: keep defaults but make link parsing line-scoped
     final inlineComponents = List<MarkdownComponent>.from(
       MarkdownComponent.inlineComponents,
     );
+    inlineComponents.removeWhere(
+      (c) => c is LatexMath || c is LatexMathMultiLine,
+    );
     // Add whitelist-based HTML tag renderer (e.g., <br>)
+    inlineComponents.insert(0, HtmlAnchorMd());
     inlineComponents.insert(0, AllowedHtmlTagsMd());
 
     // Conditionally add inline LaTeX/math renderers
@@ -158,7 +168,7 @@ class MarkdownWithCodeHighlight extends StatelessWidget {
     // Force rebuild of the markdown when key theme colors change to avoid stale styles
     final markdownWidget = GptMarkdown(
       key: ValueKey(
-        '${Theme.of(context).brightness.index}-${cs.surface.toARGB32()}-${cs.onSurface.toARGB32()}-${cs.primary.toARGB32()}-${cs.outlineVariant.toARGB32()}',
+        '${Theme.of(context).brightness.index}-${cs.surface.toARGB32()}-${cs.onSurface.toARGB32()}-${cs.primary.toARGB32()}-${cs.outlineVariant.toARGB32()}-${settings.enableMathRendering}-${settings.enableDollarLatex}',
       ),
       normalized,
       style: baseTextStyle,
@@ -746,6 +756,17 @@ class MarkdownWithCodeHighlight extends StatelessWidget {
 
     // STEP 2: PROCESSING (on masked string, code is now protected)
 
+    // Keep HTML paragraph breaks stable: </p> emits one line break, and
+    // one preserved source newline gives a single visual blank line.
+    out = out.replaceAllMapped(
+      RegExp(r"<\/p\s*>\s*\n\s*\n\s*", caseSensitive: false),
+      (_) => '</p>\n',
+    );
+    out = out.replaceAllMapped(
+      RegExp(r"<\/p\s*>(?=<p(?:\s+[^>]*)?>)", caseSensitive: false),
+      (_) => '</p>\n',
+    );
+
     // 2025-10-23 Fix: Remove title attributes from markdown links to work around gpt_markdown's
     // link regex limitation. The package's regex `[^\s]*` stops at spaces, so
     // [text](url "title") breaks. Strip titles while preserving the URL.
@@ -879,15 +900,15 @@ class MarkdownWithCodeHighlight extends StatelessWidget {
   static Widget _renderMath(
     String tex, {
     TextStyle? style,
-    MathStyle mathStyle = MathStyle.text,
+    bool displayMode = false,
   }) {
     final resolved = style ?? const TextStyle();
     try {
       return Math.tex(
         tex,
-        mathStyle: mathStyle,
+        mathStyle: displayMode ? MathStyle.display : MathStyle.text,
         textStyle: resolved,
-        onErrorFallback: (err) => Text(tex, style: resolved),
+        onErrorFallback: (_) => Text(tex, style: resolved),
       );
     } catch (_) {
       return Text(tex, style: resolved);
@@ -1025,22 +1046,41 @@ class _CollapsibleCodeBlock extends StatefulWidget {
 }
 
 class _CollapsibleCodeBlockState extends State<_CollapsibleCodeBlock> {
+  static final Map<String, bool> _manualExpansionByCodeKey = <String, bool>{};
+  static const int _maxStoredManualExpansionStates = 80;
+
   bool _expanded = true;
   bool _manuallyToggled = false;
+  late String _stateKey;
 
   @override
   void initState() {
     super.initState();
+    _stateKey = _codeBlockStateKey(widget.language, widget.code);
     _applyInitialAutoCollapse();
   }
 
   @override
   void didUpdateWidget(covariant _CollapsibleCodeBlock oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _syncStateKeyForStreamingUpdate();
+    _applyAutoCollapseIfNeeded();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _applyAutoCollapseIfNeeded();
   }
 
   void _applyInitialAutoCollapse() {
+    final stored = _manualExpansionByCodeKey[_stateKey];
+    if (stored != null) {
+      _expanded = stored;
+      _manuallyToggled = true;
+      return;
+    }
+
     final sp = context.read<SettingsProvider>();
     if (!sp.autoCollapseCodeBlock) return;
     final threshold = sp.autoCollapseCodeBlockLines;
@@ -1059,6 +1099,31 @@ class _CollapsibleCodeBlockState extends State<_CollapsibleCodeBlock> {
     if (_exceedsLineThreshold(widget.code, threshold)) {
       setState(() => _expanded = false);
     }
+  }
+
+  void _syncStateKeyForStreamingUpdate() {
+    final nextKey = _codeBlockStateKey(widget.language, widget.code);
+    if (nextKey == _stateKey) return;
+
+    if (_manuallyToggled) {
+      _stateKey = nextKey;
+      _rememberManualExpansionState();
+      return;
+    }
+
+    _stateKey = nextKey;
+    final stored = _manualExpansionByCodeKey[_stateKey];
+    if (stored == null) return;
+    _expanded = stored;
+    _manuallyToggled = true;
+  }
+
+  void _rememberManualExpansionState() {
+    _manualExpansionByCodeKey[_stateKey] = _expanded;
+    if (_manualExpansionByCodeKey.length <= _maxStoredManualExpansionStates) {
+      return;
+    }
+    _manualExpansionByCodeKey.remove(_manualExpansionByCodeKey.keys.first);
   }
 
   @override
@@ -1081,399 +1146,279 @@ class _CollapsibleCodeBlockState extends State<_CollapsibleCodeBlock> {
     }
 
     final codeFontFamily = resolveCodeFont();
+    final codeTextStyle = TextStyle(
+      fontFamily: codeFontFamily,
+      fontSize: 13,
+      height: 1.5,
+    );
+    final codeLanguage =
+        MarkdownWithCodeHighlight._normalizeLanguage(widget.language) ??
+        'plaintext';
+    final codeTheme = MarkdownWithCodeHighlight._transparentBgTheme(
+      isDark ? atomOneDarkReasonableTheme : githubTheme,
+    );
 
-    // Use theme-tinted surfaces so headers follow the current theme color.
-    final Color bodyBg = Color.alphaBlend(
-      cs.primary.withValues(alpha: isDark ? 0.06 : 0.03),
-      cs.surface,
-    );
-    final Color headerBg = Color.alphaBlend(
-      cs.primary.withValues(alpha: isDark ? 0.16 : 0.10),
-      cs.surface,
-    );
+    Widget buildCodeView(String visibleCode) {
+      final codeView = SelectableHighlightView(
+        visibleCode,
+        language: codeLanguage,
+        theme: codeTheme,
+        padding: EdgeInsets.zero,
+        textStyle: codeTextStyle,
+      );
+
+      final bool isDesktop =
+          Platform.isMacOS || Platform.isWindows || Platform.isLinux;
+      if (isDesktop || settings.mobileCodeBlockWrap) {
+        return codeView;
+      }
+
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        primary: false,
+        child: codeView,
+      );
+    }
+
+    final Color bodyBg = cs.surfaceContainer;
+    final Color headerBg = cs.surfaceContainerHighest;
+    final borderColor = _codeBlockBorderColor(cs, isDark);
+    final isEffectivelyExpanded = _isEffectivelyExpanded(settings);
+    final isCollapsed = !isEffectivelyExpanded;
 
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(vertical: 6),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: bodyBg,
+        borderRadius: BorderRadius.circular(16),
+      ),
       // Clip children to the same radius so they don't overpaint corners
       clipBehavior: Clip.antiAlias,
       // Draw the border on top so it remains visible at corners
       foregroundDecoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header layout: language (left) + copy action (icon + label) + expand/collapse icon
-          Material(
+          Container(
             color: headerBg,
-            elevation: 0,
-            shadowColor: Colors.transparent,
-            surfaceTintColor: Colors.transparent,
-            child: InkWell(
-              onTap: () => setState(() {
-                _manuallyToggled = true;
-                _expanded = !_expanded;
-              }),
-              splashColor: Platform.isIOS ? Colors.transparent : null,
-              highlightColor: Platform.isIOS ? Colors.transparent : null,
-              hoverColor: Platform.isIOS ? Colors.transparent : null,
-              overlayColor: Platform.isIOS
-                  ? const WidgetStatePropertyAll(Colors.transparent)
-                  : null,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: cs.outlineVariant.withValues(alpha: 0.28),
-                      width: 1.0,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    MarkdownWithCodeHighlight._displayLanguage(
+                      context,
+                      widget.language,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: cs.onSurfaceVariant.withValues(alpha: 0.72),
+                      height: 1.0,
                     ),
                   ),
                 ),
-                child: Row(
+                Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const SizedBox(width: 2),
-                    Text(
-                      MarkdownWithCodeHighlight._displayLanguage(
+                    _CodeBlockIconAction(
+                      icon: Lucide.Download,
+                      label: AppLocalizations.of(
                         context,
-                        widget.language,
-                      ),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: cs.onSurface,
-                        height: 1.0,
-                      ),
+                      )!.codeBlockSaveAsButton,
+                      onTap: () => _saveCodeAsFile(context),
                     ),
-                    const Spacer(),
-                    if (_isHtml(widget.language))
-                      InkWell(
-                        onTap: () {
-                          final l10n = AppLocalizations.of(context)!;
-                          if (Platform.isAndroid || Platform.isIOS) {
-                            // Mobile: navigate to preview page
-                            Navigator.of(context).push(
-                              PageRouteBuilder(
-                                pageBuilder: (_, __, ___) =>
-                                    HtmlPreviewPage(html: widget.code),
-                                transitionDuration: const Duration(
-                                  milliseconds: 300,
-                                ),
-                                reverseTransitionDuration: const Duration(
-                                  milliseconds: 240,
-                                ),
-                                transitionsBuilder:
-                                    (context, anim, sec, child) {
-                                      final curved = CurvedAnimation(
-                                        parent: anim,
-                                        curve: Curves.easeOutCubic,
-                                        reverseCurve: Curves.easeInCubic,
-                                      );
-                                      return FadeTransition(
-                                        opacity: curved,
-                                        child: child,
-                                      );
-                                    },
-                              ),
-                            );
-                          } else if (Platform.isLinux) {
-                            // Linux: show not supported
-                            showAppSnackBar(
-                              context,
-                              message: l10n.htmlPreviewNotSupportedOnLinux,
-                              type: NotificationType.warning,
-                            );
-                          } else {
-                            // Desktop (macOS/Windows): open dialog
-                            showHtmlPreviewDesktopDialog(
-                              context,
-                              html: widget.code,
-                            );
-                          }
-                        },
-                        splashColor: Platform.isIOS ? Colors.transparent : null,
-                        highlightColor: Platform.isIOS
-                            ? Colors.transparent
-                            : null,
-                        hoverColor: Platform.isIOS ? Colors.transparent : null,
-                        overlayColor: Platform.isIOS
-                            ? const WidgetStatePropertyAll(Colors.transparent)
-                            : null,
-                        borderRadius: BorderRadius.circular(6),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 6,
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Lucide.Eye,
-                                size: 14,
-                                color: cs.onSurface.withValues(alpha: 0.6),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                AppLocalizations.of(
-                                  context,
-                                )!.codeBlockPreviewButton,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: cs.onSurface.withValues(alpha: 0.6),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    // Copy action: icon + label ("复制"/localized)
-                    InkWell(
-                      onTap: () async {
-                        final copiedMessage = AppLocalizations.of(
+                    const SizedBox(width: 16),
+                    _CodeBlockIconAction(
+                      icon: Lucide.Copy,
+                      label: AppLocalizations.of(
+                        context,
+                      )!.shareProviderSheetCopyButton,
+                      onTap: () => _copyCode(context),
+                    ),
+                    if (_isHtml(widget.language)) ...[
+                      const SizedBox(width: 16),
+                      _CodeBlockIconAction(
+                        icon: Lucide.Eye,
+                        label: AppLocalizations.of(
                           context,
-                        )!.chatMessageWidgetCopiedToClipboard;
-                        await Clipboard.setData(
-                          ClipboardData(text: widget.code),
-                        );
-                        if (!context.mounted) return;
-                        showAppSnackBar(
-                          context,
-                          message: copiedMessage,
-                          type: NotificationType.success,
-                        );
-                      },
-                      splashColor: Platform.isIOS ? Colors.transparent : null,
-                      highlightColor: Platform.isIOS
-                          ? Colors.transparent
-                          : null,
-                      hoverColor: Platform.isIOS ? Colors.transparent : null,
-                      overlayColor: Platform.isIOS
-                          ? const WidgetStatePropertyAll(Colors.transparent)
-                          : null,
-                      borderRadius: BorderRadius.circular(6),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 6,
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Lucide.Copy,
-                              size: 14,
-                              color: cs.onSurface.withValues(alpha: 0.6),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              AppLocalizations.of(
-                                context,
-                              )!.shareProviderSheetCopyButton,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: cs.onSurface.withValues(alpha: 0.6),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
+                        )!.codeBlockPreviewButton,
+                        onTap: () => _previewHtml(context),
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    AnimatedRotation(
-                      turns: _expanded ? 0.25 : 0.0, // right -> down
-                      duration: const Duration(milliseconds: 180),
-                      curve: Curves.easeOutCubic,
-                      child: Icon(
-                        Lucide.ChevronRight,
-                        size: 16,
-                        color: cs.onSurface.withValues(alpha: 0.7),
-                      ),
-                    ),
+                    ],
                   ],
                 ),
-              ),
+              ],
             ),
           ),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 220),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            transitionBuilder: (child, anim) => FadeTransition(
-              opacity: anim,
-              child: SizeTransition(
-                sizeFactor: anim,
-                axisAlignment: -1.0,
-                child: child,
-              ),
-            ),
-            child: _expanded
-                ? Container(
-                    key: const ValueKey('code-expanded'),
-                    width: double.infinity,
-                    color: bodyBg,
-                    padding: const EdgeInsets.fromLTRB(10, 6, 6, 10),
-                    child: () {
-                      // Desktop: enable word wrap, allow selection, no height limit, no scroll
-                      // Mobile: horizontal scroll by default, or word wrap if setting enabled
-                      final bool isDesktop =
-                          Platform.isMacOS ||
-                          Platform.isWindows ||
-                          Platform.isLinux;
-
-                      if (isDesktop) {
-                        // Desktop: auto wrap, selectable, no height limit, no scroll
-                        return SelectableHighlightView(
-                          _trimTrailingNewlines(widget.code),
-                          language:
-                              MarkdownWithCodeHighlight._normalizeLanguage(
-                                widget.language,
-                              ) ??
-                              'plaintext',
-                          theme: MarkdownWithCodeHighlight._transparentBgTheme(
-                            isDark ? atomOneDarkReasonableTheme : githubTheme,
-                          ),
-                          padding: EdgeInsets.zero,
-                          textStyle: TextStyle(
-                            fontFamily: codeFontFamily,
-                            fontSize: 13,
-                            height: 1.5,
-                          ),
-                        );
-                      }
-
-                      // Mobile: check settings for word wrap
-                      final bool shouldWrap = settings.mobileCodeBlockWrap;
-
-                      if (shouldWrap) {
-                        // Mobile with wrap enabled: selectable, auto wrap
-                        return SelectableHighlightView(
-                          _trimTrailingNewlines(widget.code),
-                          language:
-                              MarkdownWithCodeHighlight._normalizeLanguage(
-                                widget.language,
-                              ) ??
-                              'plaintext',
-                          theme: MarkdownWithCodeHighlight._transparentBgTheme(
-                            isDark ? atomOneDarkReasonableTheme : githubTheme,
-                          ),
-                          padding: EdgeInsets.zero,
-                          textStyle: TextStyle(
-                            fontFamily: codeFontFamily,
-                            fontSize: 13,
-                            height: 1.5,
-                          ),
-                        );
-                      }
-
-                      // Mobile without wrap: horizontal scroll, selectable
-                      return SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        primary: false,
-                        child: SelectableHighlightView(
-                          _trimTrailingNewlines(widget.code),
-                          language:
-                              MarkdownWithCodeHighlight._normalizeLanguage(
-                                widget.language,
-                              ) ??
-                              'plaintext',
-                          theme: MarkdownWithCodeHighlight._transparentBgTheme(
-                            isDark ? atomOneDarkReasonableTheme : githubTheme,
-                          ),
-                          padding: EdgeInsets.zero,
-                          textStyle: TextStyle(
-                            fontFamily: codeFontFamily,
-                            fontSize: 13,
-                            height: 1.5,
-                          ),
-                        ),
-                      );
-                    }(),
-                  )
-                : Container(
-                    key: const ValueKey('code-collapsed'),
-                    width: double.infinity,
-                    color: bodyBg,
-                    padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-                    child: () {
-                      final l10n = AppLocalizations.of(context)!;
-                      final code = widget.code;
-                      final end = _trimTrailingNewlinesEndIndex(code);
-
-                      final preview = <String>[];
-                      int totalLines = 0;
-                      if (end > 0) {
-                        totalLines = 1;
-                        int lineStart = 0;
-                        for (int i = 0; i < end; i++) {
-                          final cu = code.codeUnitAt(i);
-                          if (cu == 0x0A /* \n */ || cu == 0x0D /* \r */ ) {
-                            if (preview.length < 2) {
-                              preview.add(code.substring(lineStart, i));
-                            }
-                            totalLines++;
-                            if (cu == 0x0D /* \r */ &&
-                                i + 1 < end &&
-                                code.codeUnitAt(i + 1) == 0x0A /* \n */ ) {
-                              i++;
-                            }
-                            lineStart = i + 1;
-                          }
-                        }
-                        if (preview.length < 2) {
-                          preview.add(code.substring(lineStart, end));
-                        }
-                      }
-
-                      final hiddenLines = (totalLines - preview.length).clamp(
-                        0,
-                        999999,
-                      );
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          for (final line in preview)
-                            Text(
-                              line,
-                              style: TextStyle(
-                                fontFamily: codeFontFamily,
-                                fontSize: 13,
-                                height: 1.5,
-                                color: cs.onSurface,
-                              ),
-                              softWrap: false,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          if (hiddenLines > 0)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2),
-                              child: Text(
-                                l10n.codeBlockCollapsedLines(hiddenLines),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  height: 1.4,
-                                  color: cs.onSurface.withValues(alpha: 0.55),
-                                ),
-                                softWrap: false,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                        ],
-                      );
-                    }(),
+          Container(
+            width: double.infinity,
+            color: bodyBg,
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  alignment: Alignment.topLeft,
+                  clipBehavior: Clip.hardEdge,
+                  child: buildCodeView(
+                    isCollapsed
+                        ? _collapsedHighlightedCode(settings)
+                        : _trimTrailingNewlines(widget.code),
                   ),
+                ),
+                if (_shouldShowFoldControl(settings)) ...[
+                  const SizedBox(height: 4),
+                  _CodeBlockFoldControl(
+                    expanded: isEffectivelyExpanded,
+                    onTap: () => _toggleExpanded(settings),
+                    textStyle: codeTextStyle,
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
       ),
     );
+  }
+
+  bool _isEffectivelyExpanded(SettingsProvider settings) {
+    if (!settings.autoCollapseCodeBlock) return true;
+    if (_manuallyToggled) return _expanded;
+    return !_exceedsLineThreshold(
+      widget.code,
+      settings.autoCollapseCodeBlockLines,
+    );
+  }
+
+  void _toggleExpanded(SettingsProvider settings) {
+    final nextExpanded = !_isEffectivelyExpanded(settings);
+    setState(() {
+      _manuallyToggled = true;
+      _expanded = nextExpanded;
+      _rememberManualExpansionState();
+    });
+  }
+
+  Future<void> _copyCode(BuildContext context) async {
+    final copiedMessage = AppLocalizations.of(
+      context,
+    )!.chatMessageWidgetCopiedToClipboard;
+    await Clipboard.setData(ClipboardData(text: widget.code));
+    if (!context.mounted) return;
+    showAppSnackBar(
+      context,
+      message: copiedMessage,
+      type: NotificationType.success,
+    );
+  }
+
+  Future<void> _saveCodeAsFile(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final extension = _codeFileExtension(widget.language);
+    final timestamp = DateTime.now().toLocal().toIso8601String().replaceAll(
+      RegExp(r'[:.]'),
+      '-',
+    );
+    final filename =
+        '${l10n.codeBlockDefaultFileNameStem}_$timestamp$extension';
+
+    try {
+      if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+        final savePath = await FilePicker.platform.saveFile(
+          dialogTitle: l10n.backupPageExportToFile,
+          fileName: filename,
+          type: FileType.custom,
+          allowedExtensions: [_extensionWithoutDot(extension)],
+        );
+        if (savePath == null) return;
+        await File(savePath).parent.create(recursive: true);
+        await File(savePath).writeAsString(widget.code);
+        if (!context.mounted) return;
+        showAppSnackBar(
+          context,
+          message: l10n.messageExportSheetExportedAs(p.basename(savePath)),
+          type: NotificationType.success,
+        );
+        return;
+      }
+
+      final savePath = await FilePicker.platform.saveFile(
+        dialogTitle: l10n.backupPageExportToFile,
+        fileName: filename,
+        type: FileType.custom,
+        allowedExtensions: [_extensionWithoutDot(extension)],
+        bytes: Uint8List.fromList(utf8.encode(widget.code)),
+      );
+      if (savePath == null || !context.mounted) return;
+      showAppSnackBar(
+        context,
+        message: l10n.messageExportSheetExportedAs(p.basename(savePath)),
+        type: NotificationType.success,
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      showAppSnackBar(
+        context,
+        message: l10n.messageExportSheetExportFailed('$e'),
+        type: NotificationType.error,
+      );
+    }
+  }
+
+  void _previewHtml(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    if (Platform.isAndroid || Platform.isIOS) {
+      Navigator.of(context).push(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => HtmlPreviewPage(html: widget.code),
+          transitionDuration: const Duration(milliseconds: 300),
+          reverseTransitionDuration: const Duration(milliseconds: 240),
+          transitionsBuilder: (context, anim, sec, child) {
+            final curved = CurvedAnimation(
+              parent: anim,
+              curve: Curves.easeOutCubic,
+              reverseCurve: Curves.easeInCubic,
+            );
+            return FadeTransition(opacity: curved, child: child);
+          },
+        ),
+      );
+    } else if (Platform.isLinux) {
+      showAppSnackBar(
+        context,
+        message: l10n.htmlPreviewNotSupportedOnLinux,
+        type: NotificationType.warning,
+      );
+    } else {
+      showHtmlPreviewDesktopDialog(context, html: widget.code);
+    }
+  }
+
+  bool _shouldShowFoldControl(SettingsProvider settings) {
+    if (!settings.autoCollapseCodeBlock) return false;
+    return _exceedsLineThreshold(
+      widget.code,
+      settings.autoCollapseCodeBlockLines,
+    );
+  }
+
+  String _collapsedHighlightedCode(SettingsProvider settings) {
+    final visibleLines = settings.autoCollapseCodeBlockLines.clamp(1, 999999);
+    final trimmed = _trimTrailingNewlines(widget.code);
+    if (trimmed.isEmpty) return trimmed;
+    return trimmed.split(RegExp(r'\r\n|\r|\n')).take(visibleLines).join('\n');
   }
 
   bool _exceedsLineThreshold(String code, int threshold) {
@@ -1517,6 +1462,180 @@ class _CollapsibleCodeBlockState extends State<_CollapsibleCodeBlock> {
     final end = _trimTrailingNewlinesEndIndex(s);
     return end == s.length ? s : s.substring(0, end);
   }
+}
+
+Color _codeBlockBorderColor(ColorScheme cs, bool isDark) {
+  final outlineVariant = cs.outlineVariant;
+  final isExtreme =
+      outlineVariant == Colors.black || outlineVariant == Colors.white;
+  if (!isExtreme) return outlineVariant;
+  return Color.alphaBlend(
+    cs.onSurfaceVariant.withValues(alpha: isDark ? 0.32 : 0.24),
+    cs.surface,
+  );
+}
+
+String _codeBlockStateKey(String language, String code) {
+  final normalizedLanguage = language.trim().toLowerCase();
+  final normalizedCode = code.trimLeft().replaceAll(RegExp(r'\s+'), ' ');
+  final anchor = normalizedCode.length <= 16
+      ? normalizedCode
+      : normalizedCode.substring(0, 16);
+  return '$normalizedLanguage|$anchor';
+}
+
+class _CodeBlockIconAction extends StatelessWidget {
+  const _CodeBlockIconAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(
+      context,
+    ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5);
+    return Tooltip(
+      message: label,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: IosIconButton(
+          icon: icon,
+          semanticLabel: label,
+          onTap: onTap,
+          size: 16,
+          padding: const EdgeInsets.all(4),
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _CodeBlockFoldControl extends StatelessWidget {
+  const _CodeBlockFoldControl({
+    required this.expanded,
+    required this.onTap,
+    required this.textStyle,
+  });
+
+  final bool expanded;
+  final VoidCallback onTap;
+  final TextStyle textStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
+    final label = expanded
+        ? l10n.codeBlockCollapseButton
+        : l10n.codeBlockExpandButton;
+
+    return SelectionContainer.disabled(
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: Listener(
+          behavior: HitTestBehavior.opaque,
+          onPointerDown: (_) => onTap(),
+          child: SizedBox(
+            width: double.infinity,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      expanded ? Lucide.ChevronUp : Lucide.ChevronDown,
+                      size: (textStyle.fontSize ?? 13) * 1.18,
+                      color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(label, style: textStyle.copyWith(color: cs.onSurface)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _codeFileExtension(String? language) {
+  switch ((language ?? '').trim().toLowerCase()) {
+    case 'kotlin':
+    case 'kt':
+      return '.kt';
+    case 'java':
+      return '.java';
+    case 'python':
+    case 'py':
+      return '.py';
+    case 'javascript':
+    case 'js':
+      return '.js';
+    case 'typescript':
+    case 'ts':
+      return '.ts';
+    case 'dart':
+      return '.dart';
+    case 'cpp':
+    case 'c++':
+      return '.cpp';
+    case 'c':
+      return '.c';
+    case 'csharp':
+    case 'cs':
+    case 'c#':
+      return '.cs';
+    case 'go':
+    case 'golang':
+      return '.go';
+    case 'rust':
+    case 'rs':
+      return '.rs';
+    case 'swift':
+      return '.swift';
+    case 'html':
+    case 'htm':
+    case 'rawhtml':
+    case 'raw_html':
+      return '.html';
+    case 'css':
+      return '.css';
+    case 'xml':
+      return '.xml';
+    case 'json':
+      return '.json';
+    case 'yaml':
+    case 'yml':
+      return '.yml';
+    case 'markdown':
+    case 'md':
+      return '.md';
+    case 'sql':
+      return '.sql';
+    case 'shell':
+    case 'bash':
+    case 'sh':
+    case 'zsh':
+      return '.sh';
+    case 'svg':
+      return '.svg';
+    default:
+      return '.txt';
+  }
+}
+
+String _extensionWithoutDot(String extension) {
+  return extension.startsWith('.') ? extension.substring(1) : extension;
 }
 
 bool _isHtml(String? lang) {
@@ -2057,7 +2176,7 @@ class LatexBlockScrollableMd extends BlockMd {
     final math = MarkdownWithCodeHighlight._renderMath(
       body,
       style: config.style,
-      mathStyle: MathStyle.display,
+      displayMode: true,
     );
     // Wrap in horizontal scroll to avoid overflow and center within available width
     return Padding(
@@ -2080,7 +2199,7 @@ class LatexBlockScrollableMd extends BlockMd {
   }
 }
 
-/// Inline LaTeX `$...$` rendered in a horizontally scrollable bubble to avoid line overflow
+/// Inline LaTeX `$...$` rendered in the text flow.
 class InlineLatexScrollableMd extends InlineMd {
   @override
   // Match single-dollar $...$ or \(...\) inline math (avoid $$ block)
@@ -2095,31 +2214,15 @@ class InlineLatexScrollableMd extends InlineMd {
     if (body.isEmpty) return TextSpan(text: text, style: config.style);
     final math = MarkdownWithCodeHighlight._renderMath(
       body,
-      mathStyle: MathStyle.text,
       style: () {
         final base = (config.style ?? const TextStyle());
         final baseSize = base.fontSize ?? 15.5;
-        // Slightly enlarge inline math for readability
         return base.copyWith(fontSize: baseSize * 1.2);
       }(),
     );
-    // Wrap in horizontal scroll to prevent line overflow; no extra background
-    final w = LayoutBuilder(
-      builder: (context, constraints) {
-        return SelectionContainer.disabled(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            primary: false,
-            child: math,
-          ),
-        );
-      },
-    );
-
     return WidgetSpan(
-      alignment: PlaceholderAlignment.baseline,
-      baseline: TextBaseline.alphabetic,
-      child: w,
+      alignment: PlaceholderAlignment.middle,
+      child: SelectionContainer.disabled(child: math),
     );
   }
 }
@@ -2137,28 +2240,15 @@ class InlineLatexDollarScrollableMd extends InlineMd {
     if (body.isEmpty) return TextSpan(text: text, style: config.style);
     final math = MarkdownWithCodeHighlight._renderMath(
       body,
-      mathStyle: MathStyle.text,
       style: () {
         final base = (config.style ?? const TextStyle());
         final baseSize = base.fontSize ?? 15.5;
         return base.copyWith(fontSize: baseSize * 1.2);
       }(),
     );
-    final w = LayoutBuilder(
-      builder: (context, constraints) {
-        return SelectionContainer.disabled(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            primary: false,
-            child: math,
-          ),
-        );
-      },
-    );
     return WidgetSpan(
-      alignment: PlaceholderAlignment.baseline,
-      baseline: TextBaseline.alphabetic,
-      child: w,
+      alignment: PlaceholderAlignment.middle,
+      child: SelectionContainer.disabled(child: math),
     );
   }
 }
@@ -2176,28 +2266,15 @@ class InlineLatexParenScrollableMd extends InlineMd {
     if (body.isEmpty) return TextSpan(text: text, style: config.style);
     final math = MarkdownWithCodeHighlight._renderMath(
       body,
-      mathStyle: MathStyle.text,
       style: () {
         final base = (config.style ?? const TextStyle());
         final baseSize = base.fontSize ?? 15.5;
         return base.copyWith(fontSize: baseSize * 1.2);
       }(),
     );
-    final w = LayoutBuilder(
-      builder: (context, constraints) {
-        return SelectionContainer.disabled(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            primary: false,
-            child: math,
-          ),
-        );
-      },
-    );
     return WidgetSpan(
-      alignment: PlaceholderAlignment.baseline,
-      baseline: TextBaseline.alphabetic,
-      child: w,
+      alignment: PlaceholderAlignment.middle,
+      child: SelectionContainer.disabled(child: math),
     );
   }
 }
@@ -2617,21 +2694,244 @@ class BackslashEscapeMd extends InlineMd {
   }
 }
 
-/// Whitelist-based HTML tag renderer.
-/// Currently supports <br> tags for manual line breaks.
-class AllowedHtmlTagsMd extends InlineMd {
+class DetailsHtmlMd extends BlockMd {
   @override
-  RegExp get exp => RegExp(r"<br\s*/?>", caseSensitive: false);
+  String get expString =>
+      r"<details(?:\s+[^>]*)?>\s*<summary(?:\s+[^>]*)?>[\s\S]*?<\/summary>[\s\S]*?<\/details>";
+
+  @override
+  Widget build(BuildContext context, String text, GptMarkdownConfig config) {
+    final match = RegExp(
+      r"^<details(?<attrs>[^>]*)>\s*<summary(?:\s+[^>]*)?>(?<summary>[\s\S]*?)<\/summary>(?<body>[\s\S]*?)<\/details>$",
+      caseSensitive: false,
+      dotAll: true,
+    ).firstMatch(text.trim());
+
+    if (match == null) {
+      return config.getRich(TextSpan(text: text, style: config.style));
+    }
+
+    final attrs = match.namedGroup('attrs') ?? '';
+    final summary = _plainHtmlText(match.namedGroup('summary') ?? '').trim();
+    final body = (match.namedGroup('body') ?? '').trim();
+    final initiallyExpanded = RegExp(
+      r"(?:^|\s)open(?:\s|$|=)",
+      caseSensitive: false,
+    ).hasMatch(attrs);
+
+    return _DetailsHtmlBlock(
+      summary: summary,
+      body: body,
+      initiallyExpanded: initiallyExpanded,
+      config: config,
+    );
+  }
+
+  static String _plainHtmlText(String input) {
+    return input
+        .replaceAll(RegExp(r"<br\s*/?>", caseSensitive: false), '\n')
+        .replaceAll(RegExp(r"<[^>]+>"), '')
+        .trim();
+  }
+}
+
+class _DetailsHtmlBlock extends StatefulWidget {
+  const _DetailsHtmlBlock({
+    required this.summary,
+    required this.body,
+    required this.initiallyExpanded,
+    required this.config,
+  });
+
+  final String summary;
+  final String body;
+  final bool initiallyExpanded;
+  final GptMarkdownConfig config;
+
+  @override
+  State<_DetailsHtmlBlock> createState() => _DetailsHtmlBlockState();
+}
+
+class _DetailsHtmlBlockState extends State<_DetailsHtmlBlock> {
+  late bool _expanded = widget.initiallyExpanded;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = Color.alphaBlend(
+      cs.onSurface.withValues(alpha: isDark ? 0.05 : 0.025),
+      cs.surface,
+    );
+    final borderColor = cs.outlineVariant.withValues(
+      alpha: isDark ? 0.18 : 0.30,
+    );
+    final summaryStyle = (widget.config.style ?? const TextStyle()).copyWith(
+      color: cs.onSurface,
+      fontWeight: FontWeight.w500,
+    );
+    final bodyStyle = (widget.config.style ?? const TextStyle()).copyWith(
+      color: cs.onSurface,
+    );
+    final bodyConfig = widget.config.copyWith(style: bodyStyle);
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: borderColor, width: 0.8),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IosCardPress(
+            onTap: () => setState(() => _expanded = !_expanded),
+            baseColor: Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            haptics: false,
+            child: Row(
+              children: [
+                AnimatedRotation(
+                  turns: _expanded ? 0.25 : 0.0,
+                  duration: const Duration(milliseconds: 160),
+                  curve: Curves.easeOutCubic,
+                  child: Icon(
+                    Lucide.ChevronRight,
+                    size: 15,
+                    color: cs.onSurfaceVariant.withValues(alpha: 0.78),
+                  ),
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    widget.summary,
+                    style: summaryStyle,
+                    softWrap: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            layoutBuilder: (currentChild, previousChildren) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ...previousChildren,
+                  if (currentChild != null) currentChild,
+                ],
+              );
+            },
+            transitionBuilder: (child, animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: SizeTransition(
+                  sizeFactor: animation,
+                  axisAlignment: -1,
+                  child: child,
+                ),
+              );
+            },
+            child: _expanded && widget.body.isNotEmpty
+                ? Container(
+                    key: const ValueKey('details-expanded'),
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        top: BorderSide(color: borderColor, width: 0.8),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                      child: widget.config.getRich(
+                        TextSpan(
+                          style: bodyStyle,
+                          children: MarkdownComponent.generate(
+                            context,
+                            widget.body,
+                            bodyConfig,
+                            true,
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(key: ValueKey('details-collapsed')),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class HtmlAnchorMd extends InlineMd {
+  @override
+  RegExp get exp => RegExp(
+    r'''<a\s+[^>]*href\s*=\s*(['"])(.*?)\1[^>]*>([\s\S]*?)<\/a>''',
+    caseSensitive: false,
+    dotAll: true,
+  );
 
   @override
   InlineSpan span(BuildContext context, String text, GptMarkdownConfig config) {
-    return const TextSpan(text: '\n');
+    final match = exp.firstMatch(text);
+    if (match == null) return TextSpan(text: text, style: config.style);
+
+    final url = (match.group(2) ?? '').trim();
+    final linkText = _stripTags(match.group(3) ?? '');
+    final cs = Theme.of(context).colorScheme;
+
+    return WidgetSpan(
+      baseline: TextBaseline.alphabetic,
+      alignment: PlaceholderAlignment.baseline,
+      child: GestureDetector(
+        onTap: url.isEmpty ? null : () => config.onLinkTap?.call(url, linkText),
+        child: Text(
+          linkText,
+          style: (config.style ?? const TextStyle()).copyWith(
+            color: cs.primary,
+            decoration: TextDecoration.none,
+          ),
+        ),
+      ),
+    );
+  }
+
+  static String _stripTags(String input) =>
+      input.replaceAll(RegExp(r"<[^>]+>"), '').trim();
+}
+
+/// Whitelist-based HTML tag renderer.
+/// Currently supports simple paragraph and line-break tags.
+class AllowedHtmlTagsMd extends InlineMd {
+  @override
+  RegExp get exp =>
+      RegExp(r"<br\s*/?>|<p(?:\s+[^>]*)?>|<\/p\s*>", caseSensitive: false);
+
+  @override
+  InlineSpan span(BuildContext context, String text, GptMarkdownConfig config) {
+    if (RegExp(r"<br\s*/?>", caseSensitive: false).hasMatch(text)) {
+      return const TextSpan(text: '\n');
+    }
+    if (RegExp(r"<\/p\s*>", caseSensitive: false).hasMatch(text)) {
+      return const TextSpan(text: '\n');
+    }
+    return const TextSpan(text: '');
   }
 }
 
 /// A selectable version of HighlightView that allows users to select
 /// and copy portions of the code instead of just the entire block.
-class SelectableHighlightView extends StatelessWidget {
+class SelectableHighlightView extends StatefulWidget {
   const SelectableHighlightView(
     this.source, {
     super.key,
@@ -2647,6 +2947,41 @@ class SelectableHighlightView extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final TextStyle? textStyle;
 
+  @override
+  State<SelectableHighlightView> createState() =>
+      _SelectableHighlightViewState();
+}
+
+class _SelectableHighlightViewState extends State<SelectableHighlightView> {
+  late List<TextSpan> _codeTextSpans;
+
+  @override
+  void initState() {
+    super.initState();
+    _codeTextSpans = _highlightSource();
+  }
+
+  @override
+  void didUpdateWidget(covariant SelectableHighlightView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.source == widget.source &&
+        oldWidget.language == widget.language &&
+        oldWidget.textStyle == widget.textStyle &&
+        _highlightThemeEquals(oldWidget.theme, widget.theme)) {
+      return;
+    }
+    _codeTextSpans = _highlightSource();
+  }
+
+  List<TextSpan> _highlightSource() {
+    try {
+      final result = highlight.parse(widget.source, language: widget.language);
+      return _convertNodes(result.nodes ?? const []);
+    } catch (_) {
+      return const [];
+    }
+  }
+
   /// Converts a highlight Node tree to a TextSpan tree with appropriate styling
   List<TextSpan> _convertNodes(List<Node> nodes) {
     final List<TextSpan> spans = [];
@@ -2654,13 +2989,15 @@ class SelectableHighlightView extends StatelessWidget {
     for (final node in nodes) {
       if (node.value != null) {
         // Leaf node with text content
-        spans.add(TextSpan(text: node.value, style: theme[node.className]));
+        spans.add(
+          TextSpan(text: node.value, style: widget.theme[node.className]),
+        );
       } else if (node.children != null) {
         // Node with children - recurse
         spans.add(
           TextSpan(
             children: _convertNodes(node.children!),
-            style: theme[node.className],
+            style: widget.theme[node.className],
           ),
         );
       }
@@ -2671,16 +3008,22 @@ class SelectableHighlightView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final result = highlight.parse(source, language: language);
-    final codeTextSpans = _convertNodes(result.nodes ?? []);
-
     return SelectableText.rich(
       TextSpan(
-        style: textStyle,
-        children: codeTextSpans.isEmpty
-            ? [TextSpan(text: source)]
-            : codeTextSpans,
+        style: widget.textStyle,
+        children: _codeTextSpans.isEmpty
+            ? [TextSpan(text: widget.source)]
+            : _codeTextSpans,
       ),
     );
   }
+}
+
+bool _highlightThemeEquals(Map<String, TextStyle> a, Map<String, TextStyle> b) {
+  if (identical(a, b)) return true;
+  if (a.length != b.length) return false;
+  for (final entry in a.entries) {
+    if (b[entry.key] != entry.value) return false;
+  }
+  return true;
 }
